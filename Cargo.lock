@@ -396,6 +396,7 @@ dependencies = [
  "axum",
  "serde",
  "tokio",
+ "tower",
  "tower-http",
  "tracing",
  "tracing-subscriber",

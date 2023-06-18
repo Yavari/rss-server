@@ -2,11 +2,13 @@ mod api;
 
 use axum::{
     routing::{get, post},
-    Router,
+    Router, 
+    ServiceExt,
 };
 use std::{net::SocketAddr};
 
-use tower_http::trace::TraceLayer;
+use tower_http::{trace::TraceLayer, normalize_path::NormalizePathLayer};
+use tower::layer::Layer;
 use tracing_subscriber;
 
 #[tokio::main]
@@ -17,12 +19,14 @@ async fn main() {
     .with_max_level(tracing::Level::DEBUG)
     .init();
 
-    let app = Router::new()
+    let app = NormalizePathLayer::trim_trailing_slash().layer(
+        Router::new()
         .route("/", get(api::root::get))
         .route("/error", get(api::root::error))
         .route("/users/:id", get(api::users::get_user))
         .route("/users", post(api::users::create_user))
-        .layer(TraceLayer::new_for_http());
+        .layer(TraceLayer::new_for_http())
+    );
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3030));
     println!("Server started, listening on {addr}");
