@@ -11,6 +11,12 @@ pub struct Pagination {
     per_page: Option<usize>,
 }
 
+#[derive(Deserialize)]
+pub struct CreateUser {
+    email: String,
+    password: String,
+}
+
 use tracing::{info};
 
 pub async fn get_user(
@@ -23,7 +29,25 @@ pub async fn get_user(
     })
 }
 
+pub async fn create_user(
+    Json(payload): Json<CreateUser>
+) -> Json<PostMessage> {
+    let id = "1".to_string();
+    Json(PostMessage {
+        message: id,
+        email: payload.email,
+        password: payload.password
+    })
+}
+
 #[derive(serde::Serialize)]
 pub struct Message {
+    message: String
+}
+
+#[derive(serde::Serialize)]
+pub struct PostMessage {
     message: String,
+    email: String,
+    password: String
 }
