@@ -20,6 +20,7 @@ async fn main() {
     let app = Router::new()
         .route("/", get(api::root::get))
         .route("/error", get(api::root::error))
+        .route("/users/:id", get(api::users::get_user))
         .layer(TraceLayer::new_for_http());
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3030));
