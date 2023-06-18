@@ -1,9 +1,11 @@
 mod api;
+mod middlewares;
+mod models;
 
 use axum::{
     routing::{get, post},
     Router, 
-    ServiceExt,
+    ServiceExt, middleware,
 };
 use std::{net::SocketAddr};
 
@@ -16,15 +18,16 @@ async fn main() {
     std::env::set_var("RUST_BACKTRACE", "0");
 
     tracing_subscriber::fmt()
-    .with_max_level(tracing::Level::DEBUG)
+    .with_max_level(tracing::Level::INFO)
     .init();
 
     let app = NormalizePathLayer::trim_trailing_slash().layer(
         Router::new()
-        .route("/", get(api::root::get))
-        .route("/error", get(api::root::error))
         .route("/users/:id", get(api::users::get_user))
         .route("/users", post(api::users::create_user))
+        .route("/", get(api::root::get))
+        .route("/error", get(api::root::error))
+        .route_layer(middleware::from_fn(middlewares::azure_auth_middleware::azure_auth_middleware))
         .layer(TraceLayer::new_for_http())
     );
 

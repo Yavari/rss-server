@@ -1,6 +1,6 @@
 use axum::{
     extract::{Path, Query},
-    Json
+    Json, Extension
 };
 
 use serde::Deserialize;
@@ -19,13 +19,19 @@ pub struct CreateUser {
 
 use tracing::{info};
 
+use crate::models::auth_context::AuthContext;
+
+
 pub async fn get_user(
+    Extension(auth_context): Extension<AuthContext>,
     Path(id): Path<String>,
-    pagination: Query<Pagination>
+    pagination: Query<Pagination>,
 ) -> Json<Message> {
     info!(id, pagination.page, pagination.per_page);
+    
     Json(Message {
         message: id,
+        auth_context: auth_context,
     })
 }
 
@@ -42,7 +48,8 @@ pub async fn create_user(
 
 #[derive(serde::Serialize)]
 pub struct Message {
-    message: String
+    message: String,
+    auth_context: AuthContext
 }
 
 #[derive(serde::Serialize)]
