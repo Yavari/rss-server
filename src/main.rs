@@ -6,12 +6,21 @@ use axum::{
 };
 use std::{net::SocketAddr};
 
-
+use tower_http::trace::TraceLayer;
+use tracing_subscriber;
 
 #[tokio::main]
 async fn main() {
+    std::env::set_var("RUST_BACKTRACE", "0");
+
+    tracing_subscriber::fmt()
+    .with_max_level(tracing::Level::DEBUG)
+    .init();
+
     let app = Router::new()
-        .route("/", get(api::root::handler));
+        .route("/", get(api::root::get))
+        .route("/error", get(api::root::error))
+        .layer(TraceLayer::new_for_http());
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3030));
     println!("Server started, listening on {addr}");
