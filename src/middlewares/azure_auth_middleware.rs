@@ -2,22 +2,20 @@ use axum::{
     headers::{authorization::Bearer, Authorization, HeaderMapExt},
     http::{Request, StatusCode},
     middleware::Next,
-    response::Response,
+    response::Response, extract::State,
 };
-use azure_jwt::AzureAuth;
 use tokio::task::spawn_blocking;
 use tracing::{error, info, warn};
 
-use crate::models::auth_context::AuthContext;
+use crate::models::{auth_context::AuthContext, app_state::AppState};
 
 pub async fn azure_auth_middleware<T>(
+    State(state): State<AppState>,
     mut request: Request<T>,
     next: Next<T>,
 ) -> Result<Response, StatusCode> {
     if let Some(token) = request.headers().typed_get::<Authorization<Bearer>>() {
-        let mut az_auth = get_az_auth()
-            .await
-            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        let mut az_auth = state.azure_auth;
 
         let token = token.token().to_owned();
         let decoded_token = spawn_blocking(move || az_auth.validate_token(&token))
@@ -53,23 +51,4 @@ pub async fn azure_auth_middleware<T>(
         request.extensions_mut().insert(auth_context);
         return Ok(next.run(request).await);
     }
-}
-
-// TODO: This should be passed in somehow
-async fn get_az_auth() -> Result<AzureAuth, Box<dyn std::error::Error>> {
-    let aud = std::env::var("AUD").map_err(|op| {
-        error!("Could not read AUD from environment variable");
-        op
-    })?;
-    let az_auth = spawn_blocking(|| AzureAuth::new(aud))
-        .await
-        .map_err(|op| {
-            error!("AzureAuth::new task spawn failed");
-            op
-        })?
-        .map_err(|op| {
-            error!("AUD not valid");
-            op
-        })?;
-    Ok(az_auth)
 }
