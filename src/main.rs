@@ -8,7 +8,7 @@ use axum::{
     Router, ServiceExt,
 };
 use azure_jwt::AzureAuth;
-use std::net::SocketAddr;
+use std::{net::SocketAddr, sync::{Arc, Mutex}};
 use tokio::task::spawn_blocking;
 
 use tower::layer::Layer;
@@ -28,7 +28,7 @@ async fn main() {
         .expect("AzureAuth::new task spawn failed");
 
     let state = models::app_state::AppState { 
-        azure_auth: azure_auth 
+        azure_auth: Arc::new(Mutex::new(azure_auth)) 
     };
 
     let app = NormalizePathLayer::trim_trailing_slash().layer(

@@ -15,10 +15,8 @@ pub async fn azure_auth_middleware<T>(
     next: Next<T>,
 ) -> Result<Response, StatusCode> {
     if let Some(token) = request.headers().typed_get::<Authorization<Bearer>>() {
-        let mut az_auth = state.azure_auth;
-
         let token = token.token().to_owned();
-        let decoded_token = spawn_blocking(move || az_auth.validate_token(&token))
+        let decoded_token = spawn_blocking(move || state.azure_auth.lock().expect("").validate_token(&token))
             .await
             .map_err(|_| {
                 error!("az_auth.validate_token task spawn failed");
