@@ -34,9 +34,10 @@ async fn main() {
     let app = NormalizePathLayer::trim_trailing_slash().layer(
         Router::new()
             .route("/users/:id", get(api::users::get_user))
-            .route("/users", post(api::users::create_user))
             .route("/", get(api::root::get))
             .route("/error", get(api::root::error))
+            .route_layer(middleware::from_fn(middlewares::require_authenticated_middleware::require_auth))
+            .route("/users", post(api::users::create_user))
             .route_layer(middleware::from_fn_with_state(state, middlewares::azure_auth_middleware::azure_auth_middleware))
             .layer(TraceLayer::new_for_http())
     );

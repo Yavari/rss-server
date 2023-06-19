@@ -1,1 +1,2 @@
 pub mod azure_auth_middleware;
+pub mod require_authenticated_middleware;
