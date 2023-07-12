@@ -1,0 +1,7 @@
+[workspace]
+
+members = [
+    "rssreader",
+    "rssserver",
+    "libs/blogparser",
+]
