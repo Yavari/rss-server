@@ -1,4 +1,4 @@
-use blogparser::BlogParser::{Blog, ArticleInstruction, BlogIndex, ParseInstruction, Order};
+use blogparser::blog_parser::{Blog, ArticleInstruction, BlogIndex, ParseInstruction, Order};
 use reqwest::Client;
 
 #[tokio::main]

@@ -1,5 +1,5 @@
 use axum::{extract::Path, response::Html};
-use blogparser::BlogParser::{ArticleInstruction, Blog, BlogIndex, Order, ParseInstruction};
+use blogparser::blog_parser::{ArticleInstruction, Blog, BlogIndex, Order, ParseInstruction};
 use reqwest::Client;
 
 pub async fn view() -> Html<String> {
