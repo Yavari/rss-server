@@ -5,6 +5,8 @@ pub mod BlogParser {
     use scraper::{ElementRef, Html, Selector};
 
     use crate::element_ref_extensions::Extensions;
+
+    #[derive(Clone)]
     pub struct Blog {
         pub client: Client,
         pub url: String,
@@ -13,17 +15,20 @@ pub mod BlogParser {
         pub article: ArticleInstruction,
     }
 
-    #[derive(Debug)]
+    #[derive(Debug, Clone)]
     pub struct Article {
-        headline: String,
-        content: String,
-        date: Option<String>,
+        pub headline: String,
+        pub content: String,
+        pub date: Option<String>,
     }
+
+    #[derive(Clone)]
     pub struct BlogIndex {
         pub section: ParseInstruction,
         pub link_selector: ParseInstruction,
     }
 
+    #[derive(Clone)]
     pub struct ArticleInstruction {
         pub section: ParseInstruction,
         pub headline: ParseInstruction,
@@ -31,6 +36,7 @@ pub mod BlogParser {
         pub content: Option<ParseInstruction>,
     }
 
+    #[derive(Clone)]
     pub enum ParseInstruction {
         Selectors(String, Order),
     }

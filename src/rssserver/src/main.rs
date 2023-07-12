@@ -38,6 +38,9 @@ async fn main() {
             .route("/error", get(api::root::error))
             .route_layer(middleware::from_fn(middlewares::require_authenticated_middleware::require_auth))
             .route("/users", post(api::users::create_user))
+            .route("/rss", get(api::rss::view))
+            .route("/rss/blogs/:id", get(api::rss::view_blog))
+            .route("/rss/blogs/:id/articles/*path", get(api::rss::view_article))
             .route_layer(middleware::from_fn_with_state(state, middlewares::azure_auth_middleware::azure_auth_middleware))
             .layer(TraceLayer::new_for_http())
     );
