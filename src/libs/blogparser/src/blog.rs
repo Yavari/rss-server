@@ -2,7 +2,7 @@ use scraper::{ElementRef, Html, Selector};
 
 use crate::blog_parser::{Article, Blog, Order, ParseInstruction};
 use crate::element_ref_extensions::Extensions;
-use crate::RegexParser::RegexParser;
+use crate::regex_parser::RegexParser;
 
 impl Blog {
     fn get_blog_url(self: &Blog) -> String {

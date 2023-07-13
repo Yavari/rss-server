@@ -1,5 +1,5 @@
 pub mod blog;
-pub mod RegexParser;
+pub mod regex_parser;
 pub mod element_ref_extensions;
 
 pub mod blog_parser {
