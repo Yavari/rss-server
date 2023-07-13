@@ -1,28 +1,48 @@
 use regex::Regex;
-use scraper::{Html, ElementRef, Selector};
+use scraper::{ElementRef, Html, Selector};
 
 pub struct RegexParser {
     document: Html,
 }
 
 impl RegexParser {
-    pub fn create(content_node: ElementRef<'_>, x: &String) -> RegexParser {
-        let html = get_html_from_regex(content_node, x).unwrap();
+    pub fn create(node: ElementRef<'_>, re: &String) -> RegexParser {
+        let re = Regex::new(re).unwrap();
         RegexParser {
-            document: Html::parse_fragment(html.trim()),
+            document: Html::parse_fragment(get_single_element(node, re).trim()),
         }
     }
-    pub fn get_element_ref<'a>(&self) -> ElementRef<'_> {
+
+    pub fn create_vec(node: ElementRef<'_>, re: &String) -> Vec<RegexParser> {
+        let re = Regex::new(re).unwrap();
+        get_html_from_regex(node, re)
+            .into_iter()
+            .map(|element| RegexParser {
+                document: Html::parse_fragment(&element),
+            })
+            .collect()
+    }
+
+    pub fn get_element_ref<'a>(&'a self) -> ElementRef<'a> {
         self.document.select(&Selector::parse("*").unwrap()).next().unwrap()
     }
 }
 
-fn get_html_from_regex(content_node: ElementRef<'_>, x: &String) -> Option<String> {
-    let html = content_node.html();
-    let re = Regex::new(x).unwrap();
-    for (_, [path]) in re.captures_iter(&html).map(|c| c.extract()) {
-        return Some(path.to_string());
-    }
+fn get_single_element(node: ElementRef<'_>, re: Regex) -> String {
+    let html = node.html();
+    let (_, [path]) = re
+        .captures_iter(&html)
+        .next()
+        .expect(&format!("Could not find matches for {}", re))
+        .extract();
+    return path.to_string();
+}
 
-    None
+fn get_html_from_regex(node: ElementRef<'_>, re: Regex) -> Vec<String> {
+    re.captures_iter(&node.html())
+        .map(|c| {
+            let (_, [path]) = c.extract();
+            path.to_string()
+        })
+        .collect()
 }
