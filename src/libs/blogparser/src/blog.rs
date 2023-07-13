@@ -1,6 +1,6 @@
-use scraper::{Html, Selector, ElementRef};
+use scraper::{ElementRef, Html, Selector};
 
-use crate::blog_parser::{Blog, ParseInstruction, Article, get_ordered_element_ref};
+use crate::blog_parser::{get_ordered_element_ref, Article, Blog, ParseInstruction};
 use crate::element_ref_extensions::Extensions;
 
 impl Blog {
@@ -28,22 +28,17 @@ impl Blog {
             .await
             .expect(&format!("Could not fetch {}", url));
 
-        result
-            .text()
-            .await
-            .expect("Could not convert response to html")
+        result.text().await.expect("Could not convert response to html")
     }
 
     pub fn parse_links(self: &Blog, html: &String) -> Vec<String> {
         let document = Html::parse_document(html);
-        let content_node = self.get_content_node(&self.index.section, &document);
+        let content_node = get_content_node(&document, &self.index.section);
 
         match &self.index.link_selector {
             ParseInstruction::Selectors(selector, order) => {
-                let outer_selector =
-                    Selector::parse(&selector).expect(&format!("Could not parsej{}", selector));
-                let a_selector =
-                    Selector::parse("a").expect(&format!("Could not parsej{}", "a"));
+                let outer_selector = Selector::parse(&selector).expect(&format!("Could not parsej{}", selector));
+                let a_selector = Selector::parse("a").expect(&format!("Could not parsej{}", "a"));
                 let selects = content_node.select(&outer_selector);
 
                 selects
@@ -57,40 +52,17 @@ impl Blog {
 
     pub fn parse_article(self: &Blog, html: &String) -> Article {
         let document = Html::parse_document(html);
-        let content_node = self.get_content_node(&self.article.section, &document);
+        let content_node = get_content_node(&document, &self.article.section);
 
-        let headline = match &self.article.headline {
-            ParseInstruction::Selectors(selector, order) => {
-                let selector =
-                    Selector::parse(&selector).expect(&format!("Could not parsej{}", selector));
-                get_ordered_element_ref(content_node, &selector, &order)
-            }
-            .unwrap(),
-        };
+        let headline = get_element_ref(content_node, &self.article.headline).unwrap();
 
         let content = match &self.article.content {
-            Some(content) => match content {
-                ParseInstruction::Selectors(selector, order) => {
-                    let selector = Selector::parse(&selector)
-                        .expect(&format!("Could not parsej{}", selector));
-                    get_ordered_element_ref(content_node, &selector, &order)
-                }
-                .unwrap(),
-            },
+            Some(content) => get_element_ref(content_node, &content).unwrap(),
             None => content_node,
         };
 
         let date = match &self.article.date {
-            Some(content) => match content {
-                ParseInstruction::Selectors(selector, order) => {
-                    let selector = Selector::parse(&selector)
-                        .expect(&format!("Could not parsej{}", selector));
-                    let node = get_ordered_element_ref(content_node, &selector, &order);
-
-                    let result = node.unwrap().get_string();
-                    Some(result)
-                }
-            },
+            Some(content) => Some(get_element_ref(content_node, content).unwrap().get_string()),
             None => None,
         };
 
@@ -101,22 +73,19 @@ impl Blog {
         }
     }
 
-    fn get_content_node<'a>(
-        self: &Blog,
-        instruction: &ParseInstruction,
-        document: &'a Html,
-    ) -> ElementRef<'a> {
-        let root_node = document
-            .select(&Selector::parse("html").unwrap())
-            .next()
-            .unwrap();
-        match instruction {
-            ParseInstruction::Selectors(selector, order) => {
-                let selector =
-                    Selector::parse(&selector).expect(&format!("Could not parsej{}", selector));
-                get_ordered_element_ref(root_node, &selector, order)
-            }
-            .unwrap(),
+
+}
+
+fn get_content_node<'a>(document: &'a Html, instruction: &ParseInstruction) -> ElementRef<'a> {
+    let root_node = document.select(&Selector::parse("html").unwrap()).next().unwrap();
+    get_element_ref(root_node, instruction).unwrap()
+}
+
+fn get_element_ref<'a>(node: ElementRef<'a>, instruction: &ParseInstruction) -> Option<ElementRef<'a>> {
+    match instruction {
+        ParseInstruction::Selectors(selector, order) => {
+            let selector = Selector::parse(&selector).expect(&format!("Could not parsej{}", selector));
+            get_ordered_element_ref(node, &selector, &order)
         }
     }
 }

@@ -36,7 +36,14 @@ pub async fn view_article(Path((id, path)): Path<(usize, String)>) -> Html<Strin
         let url = "/".to_string() + &path;
         let html = blog.fetch_article(&url).await;
         let article = blog.parse_article(&html);
-        return Html(article.content);
+
+        let html = if let Some(date) = article.date{
+            format!("<h1>{}</h1><p>{}</p><hr/>{}", article.headline, date, article.content)
+        }else{
+            format!("<h1>{}</h1><hr/>{}", article.headline, article.content)
+        };
+
+        return Html(html);
     } else {
         return Html("Not found".to_string());
     }
