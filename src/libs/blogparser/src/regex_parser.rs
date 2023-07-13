@@ -1,21 +1,24 @@
+use once_cell::sync::Lazy;
 use regex::Regex;
 use scraper::{ElementRef, Html, Selector};
+
+static SELECT_ALL: Lazy<Selector> = Lazy::new(|| Selector::parse("*").unwrap());
 
 pub struct RegexParser {
     document: Html,
 }
 
 impl RegexParser {
-    pub fn create(node: ElementRef<'_>, re: &String) -> RegexParser {
+    pub fn create(html: &str, re: &String) -> RegexParser {
         let re = Regex::new(re).unwrap();
         RegexParser {
-            document: Html::parse_fragment(get_single_element(&node.html(), re).trim()),
+            document: Html::parse_fragment(get_single_element(html, re).trim()),
         }
     }
 
-    pub fn create_vec(node: ElementRef<'_>, re: &String) -> Vec<RegexParser> {
+    pub fn create_vec(html: &str, re: &String) -> Vec<RegexParser> {
         let re = Regex::new(re).unwrap();
-        get_html_from_regex(&node.html(), re)
+        get_html_from_regex(html, re)
             .into_iter()
             .map(|element| RegexParser {
                 document: Html::parse_fragment(&element),
@@ -24,7 +27,7 @@ impl RegexParser {
     }
 
     pub fn get_element_ref<'a>(&'a self) -> ElementRef<'a> {
-        self.document.select(&Selector::parse("*").unwrap()).next().unwrap()
+        self.document.select(&SELECT_ALL).next().unwrap()
     }
 }
 

@@ -62,7 +62,7 @@ impl Blog {
                     .unwrap()
                     .get_string()
             }
-            ParseInstruction::Regex(x) => RegexParser::create(content_node, x).get_element_ref().get_string(),
+            ParseInstruction::Regex(x) => RegexParser::create(&content_node.html(), x).get_element_ref().get_string(),
         };
 
         let content = match &self.article.content {
@@ -72,7 +72,7 @@ impl Blog {
                         .unwrap()
                         .html()
                 }
-                ParseInstruction::Regex(x) => RegexParser::create(content_node, x).get_element_ref().html(),
+                ParseInstruction::Regex(x) => RegexParser::create(&content_node.html(), x).get_element_ref().html(),
             },
             None => content_node.html(),
         };
@@ -84,7 +84,7 @@ impl Blog {
                         .unwrap()
                         .get_string(),
                 ),
-                ParseInstruction::Regex(x) => Some(RegexParser::create(content_node, x).get_element_ref().get_string()),
+                ParseInstruction::Regex(x) => Some(RegexParser::create(&content_node.html(), x).get_element_ref().get_string()),
             },
             None => None,
         };
