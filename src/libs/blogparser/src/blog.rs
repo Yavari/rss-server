@@ -1,6 +1,6 @@
 use scraper::{ElementRef, Html, Selector};
 
-use crate::blog_parser::{get_ordered_element_ref, Article, Blog, ParseInstruction};
+use crate::blog_parser::{Article, Blog, Order, ParseInstruction};
 use crate::element_ref_extensions::Extensions;
 
 impl Blog {
@@ -47,6 +47,7 @@ impl Blog {
                     .filter_map(|x| x.get_url())
                     .collect::<Vec<String>>()
             }
+            ParseInstruction::Regexp(_) => todo!(),
         }
     }
 
@@ -72,8 +73,6 @@ impl Blog {
             date: date,
         }
     }
-
-
 }
 
 fn get_content_node<'a>(document: &'a Html, instruction: &ParseInstruction) -> ElementRef<'a> {
@@ -84,8 +83,17 @@ fn get_content_node<'a>(document: &'a Html, instruction: &ParseInstruction) -> E
 fn get_element_ref<'a>(node: ElementRef<'a>, instruction: &ParseInstruction) -> Option<ElementRef<'a>> {
     match instruction {
         ParseInstruction::Selectors(selector, order) => {
-            let selector = Selector::parse(&selector).expect(&format!("Could not parsej{}", selector));
+            let selector = Selector::parse(&selector).expect(&format!("Could not parse {}", selector));
             get_ordered_element_ref(node, &selector, &order)
         }
+        ParseInstruction::Regexp(x) => todo!(),
+    }
+}
+
+fn get_ordered_element_ref<'a>(node: ElementRef<'a>, selector: &Selector, order: &Order) -> Option<ElementRef<'a>> {
+    let select = node.select(&selector);
+    match order {
+        Order::Normal(n) => select.skip(*n).next(),
+        Order::Reverse(n) => select.collect::<Vec<_>>().into_iter().rev().skip(*n).next(),
     }
 }

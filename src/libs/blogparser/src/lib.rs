@@ -1,9 +1,8 @@
-pub mod element_ref_extensions;
 pub mod blog;
+pub mod element_ref_extensions;
 
 pub mod blog_parser {
     use reqwest::Client;
-    use scraper::{ElementRef, Selector};
 
     #[derive(Clone)]
     pub struct Blog {
@@ -38,6 +37,7 @@ pub mod blog_parser {
     #[derive(Clone)]
     pub enum ParseInstruction {
         Selectors(String, Order),
+        Regexp(String),
     }
 
     #[derive(Clone)]
@@ -45,17 +45,4 @@ pub mod blog_parser {
         Normal(usize),
         Reverse(usize),
     }
-
-    pub fn get_ordered_element_ref<'a>(
-        node: ElementRef<'a>,
-        selector: &Selector,
-        order: &Order,
-    ) -> Option<ElementRef<'a>> {
-        let select = node.select(&selector);
-        match order {
-            Order::Normal(n) => select.skip(*n).next(),
-            Order::Reverse(n) => select.collect::<Vec<_>>().into_iter().rev().skip(*n).next(),
-        }
-    }
-    
 }
