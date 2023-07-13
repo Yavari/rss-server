@@ -35,13 +35,13 @@ pub mod blog_parser {
         pub content: Option<ParseInstruction>,
     }
 
-    #[derive(Clone, Serialize, Deserialize)]
+    #[derive(Clone, Serialize, Deserialize, Debug)]
     pub enum ParseInstruction {
         Selectors(String, Order),
         Regex(String),
     }
 
-    #[derive(Clone, Serialize, Deserialize)]
+    #[derive(Clone, Serialize, Deserialize, Debug)]
     pub enum Order {
         Normal(usize),
         Reverse(usize),

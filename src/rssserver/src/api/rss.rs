@@ -4,11 +4,11 @@ use reqwest::Client;
 
 pub async fn view() -> Html<String> {
     let blogs = get_blogs()
-    .iter()
-    .enumerate()
-    .map(|(i,b)| format!("<a href='/rss/blogs/{}'>{}</a>", i, b.url))
-    .collect::<Vec<String>>()
-    .join("<br/>");
+        .iter()
+        .enumerate()
+        .map(|(i, b)| format!("<a href='/rss/blogs/{}'>{}</a>", i, b.url))
+        .collect::<Vec<String>>()
+        .join("<br/>");
     Html(blogs)
 }
 
@@ -18,13 +18,17 @@ pub async fn view_blog(Path(id): Path<usize>) -> Html<String> {
     if let Some(blog) = blog {
         let response = blog.fetch_blog(&client).await;
         let urls = blog.parse_links(&response);
-        let a = urls
-            .iter()
-            .map(|f| format!("<a href='/rss/blogs/{}/articles{}'>{}</a>", id, f, f))
-            .collect::<Vec<String>>()
-            .join("<br/>");
+        let urls = urls;
+        if let Ok(urls) = urls {
+            let a = urls.iter()
+                .map(|f| format!("<a href='/rss/blogs/{}/articles{}'>{}</a>", id, f, f))
+                .collect::<Vec<String>>()
+                .join("<br/>");
 
-        return Html(a);
+            return Html(a);
+        } else {
+        }
+        return Html("Error".to_string());
     } else {
         return Html("Not found".to_string());
     }
@@ -39,13 +43,17 @@ pub async fn view_article(Path((id, path)): Path<(usize, String)>) -> Html<Strin
         let html = blog.fetch_article(&url, &client).await;
         let article = blog.parse_article(&html);
 
-        let html = if let Some(date) = article.date{
-            format!("<h1>{}</h1><p>{}</p><hr/>{}", article.headline, date, article.content)
-        }else{
-            format!("<h1>{}</h1><hr/>{}", article.headline, article.content)
-        };
+        if let Ok(article) = article {
+            let html = if let Some(date) = article.date {
+                format!("<h1>{}</h1><p>{}</p><hr/>{}", article.headline, date, article.content)
+            } else {
+                format!("<h1>{}</h1><hr/>{}", article.headline, article.content)
+            };
 
-        return Html(html);
+            return Html(html);
+        } else {
+            return Html("ERROR".to_string());
+        }
     } else {
         return Html("Not found".to_string());
     }
@@ -58,10 +66,7 @@ fn get_blogs() -> Vec<Blog> {
             url_suffix: Some("babysteps".to_string()),
             index: BlogIndex {
                 section: ParseInstruction::Selectors(".content_body".to_string(), Order::Normal(0)),
-                link_selector: ParseInstruction::Selectors(
-                    ".post_section".to_string(),
-                    Order::Normal(0),
-                ),
+                link_selector: ParseInstruction::Selectors(".post_section".to_string(), Order::Normal(0)),
             },
             article: ArticleInstruction {
                 section: ParseInstruction::Selectors("article".to_string(), Order::Normal(0)),
@@ -70,10 +75,7 @@ fn get_blogs() -> Vec<Blog> {
                     ".post-content".to_string(),
                     Order::Normal(0),
                 )),
-                date: Some(ParseInstruction::Selectors(
-                    "time".to_string(),
-                    Order::Reverse(0),
-                )),
+                date: Some(ParseInstruction::Selectors("time".to_string(), Order::Reverse(0))),
             },
         },
         Blog {

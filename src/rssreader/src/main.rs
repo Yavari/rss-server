@@ -1,8 +1,8 @@
-use blogparser::blog_parser::{ArticleInstruction, Blog, BlogIndex, Order, ParseInstruction};
+use blogparser::{blog_parser::{ArticleInstruction, Blog, BlogIndex, Order, ParseInstruction}, blog::Error};
 use reqwest::Client;
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), Error>{
     let client: Client = Client::new();
 
     let blogs = vec![
@@ -44,16 +44,18 @@ async fn main() {
         println!("{}", str);
     }
 
-    for blog in blogs {
+    for blog in &blogs {
         let str = &blog.to_html_safe_string();
         let blog = Blog::from_html_safe_string(str);
         let response = blog.fetch_blog(&client).await;
-        let urls = blog.parse_links(&response);
+        let urls = blog.parse_links(&response)?;
         println!("{:?}", urls);
         for url in urls {
             let html = blog.fetch_article(&url, &client).await;
             println!("{:?}", blog.parse_article(&html));
-            return;
+            return Ok(());
         }
     }
+
+    Ok(())
 }

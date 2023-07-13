@@ -9,31 +9,35 @@ use crate::regex_parser::RegexParser;
 static SELECT_ALL: Lazy<Selector> = Lazy::new(|| Selector::parse("*").unwrap());
 
 impl Blog {
-    fn get_blog_url(self: &Blog) -> String {
+    fn get_blog_url(&self) -> String {
         match &self.url_suffix {
             Some(suffix) => format!("{}/{}", &self.url, &suffix),
             None => self.url.clone(),
         }
     }
 
-    pub async fn fetch_blog(self: &Blog, client: &Client) -> String {
+    pub async fn fetch_blog(&self, client: &Client) -> String {
         self.fetch_url(&self.get_blog_url(), client).await
     }
 
-    pub async fn fetch_article(self: &Blog, url: &str, client: &Client) -> String {
-        self.fetch_url(&format!("{}{}", &self.url, url), client).await
+    pub async fn fetch_article(&self, url: &str, client: &Client) -> String {
+        self.fetch_url(&self.article_url(url), client).await
     }
 
-    async fn fetch_url(self: &Blog, url: &str, client: &Client) -> String {
+    pub fn article_url(&self, url: &str) -> String {
+        format!("{}{}", self.url, url)
+    }
+
+    async fn fetch_url(&self, url: &str, client: &Client) -> String {
         println!("{}", url);
         let result = client.get(url).send().await.expect(&format!("Could not fetch {}", url));
 
         result.text().await.expect("Could not convert response to html")
     }
 
-    pub fn parse_links(self: &Blog, html: &String) -> Vec<String> {
+    pub fn parse_links(&self, html: &String) -> Result<Vec<String>, Error> {
         let document = Html::parse_document(html);
-        let content_node = get_content_node(&document, &self.index.section);
+        let content_node = get_content_node(&document, &self.index.section)?;
 
         match &self.index.link_selector {
             ParseInstruction::Selectors(selector, order) => {
@@ -41,22 +45,25 @@ impl Blog {
                 let a_selector = Selector::parse("a").expect(&format!("Could not parsej{}", "a"));
                 let selects = content_node.select(&outer_selector);
 
-                selects
+                let links = selects
                     .map(|select| get_ordered_element_ref(select, &a_selector, order))
                     .filter_map(|x| x)
                     .filter_map(|x| x.get_url())
-                    .collect::<Vec<String>>()
+                    .collect::<Vec<String>>();
+
+                Ok(links)
             }
             ParseInstruction::Regex(re) => {
                 let regex_parser = RegexParser::create_vec(&content_node.html(), re);
-                regex_parser.into_iter().map(|x| x.html().to_string()).collect()
+                let links = regex_parser.into_iter().map(|x| x.html().to_string()).collect();
+                Ok(links)
             }
         }
     }
 
-    pub fn parse_article(self: &Blog, html: &String) -> Article {
+    pub fn parse_article(self: &Blog, html: &String) -> Result<Article, Error> {
         let document = Html::parse_document(html);
-        let content_node = get_content_node(&document, &self.article.section);
+        let content_node = get_content_node(&document, &self.article.section)?;
 
         let headline = match &self.article.headline {
             ParseInstruction::Selectors(selector, order) => {
@@ -96,20 +103,19 @@ impl Blog {
             None => None,
         };
 
-        Article {
+        Ok(Article {
             headline: headline,
             content: content,
             date: date,
-        }
+        })
     }
 }
 
-fn get_content_node<'a>(document: &'a Html, instruction: &ParseInstruction) -> ElementRef<'a> {
+fn get_content_node<'a>(document: &'a Html, instruction: &ParseInstruction) -> Result<ElementRef<'a>, Error> {
     let root_node = document.select(&Selector::parse("html").unwrap()).next().unwrap();
     match instruction {
-        ParseInstruction::Selectors(selector, order) => {
-            get_ordered_element_ref_from_string(root_node, selector, order).unwrap()
-        }
+        ParseInstruction::Selectors(selector, order) => get_ordered_element_ref_from_string(root_node, selector, order)
+            .ok_or(Error::OrderedElementNotFound(instruction.clone())),
         ParseInstruction::Regex(_) => todo!(),
     }
 }
@@ -129,4 +135,9 @@ fn get_ordered_element_ref<'a>(node: ElementRef<'a>, selector: &Selector, order:
         Order::Normal(n) => select.skip(*n).next(),
         Order::Reverse(n) => select.collect::<Vec<_>>().into_iter().rev().skip(*n).next(),
     }
+}
+
+#[derive(Debug)]
+pub enum Error {
+    OrderedElementNotFound(ParseInstruction),
 }
