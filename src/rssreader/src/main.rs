@@ -39,8 +39,14 @@ async fn main() {
         },
     ];
 
+    for blog in &blogs {
+        let str = blog.to_html_safe_string();
+        println!("{}", str);
+    }
+
     for blog in blogs {
-        let blog = Blog::from_html_safe_string(&blog.to_html_safe_string());
+        let str = &blog.to_html_safe_string();
+        let blog = Blog::from_html_safe_string(str);
         let response = blog.fetch_blog(&client).await;
         let urls = blog.parse_links(&response);
         println!("{:?}", urls);

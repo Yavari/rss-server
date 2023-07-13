@@ -12,4 +12,8 @@ impl Blog {
         let (_, b) =  b.into_iter().next().unwrap();
         serde_json::from_str(&b).unwrap()
     }
+
+    pub fn from_json(json: &str) -> Blog {
+        serde_json::from_str(&json).unwrap()
+    }
 }
