@@ -88,7 +88,7 @@ fn get_blogs() -> Vec<Blog> {
                 section: ParseInstruction::Selectors(".col-md-10".to_string(), Order::Normal(0)),
                 headline: ParseInstruction::Selectors("h1".to_string(), Order::Normal(0)),
                 content: None,
-                date: None,
+                date: Some(ParseInstruction::Regex(r"</h1>([\s\S]*?)<br>".to_string())),
             },
         },
     ]

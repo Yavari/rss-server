@@ -2,6 +2,7 @@ use scraper::{ElementRef, Html, Selector};
 
 use crate::blog_parser::{Article, Blog, Order, ParseInstruction};
 use crate::element_ref_extensions::Extensions;
+use crate::RegexParser::RegexParser;
 
 impl Blog {
     fn get_blog_url(self: &Blog) -> String {
@@ -47,7 +48,7 @@ impl Blog {
                     .filter_map(|x| x.get_url())
                     .collect::<Vec<String>>()
             }
-            ParseInstruction::Regexp(_) => todo!(),
+            ParseInstruction::Regex(_) => todo!(),
         }
     }
 
@@ -55,21 +56,42 @@ impl Blog {
         let document = Html::parse_document(html);
         let content_node = get_content_node(&document, &self.article.section);
 
-        let headline = get_element_ref(content_node, &self.article.headline).unwrap();
+        let headline = match &self.article.headline {
+            ParseInstruction::Selectors(selector, order) => {
+                get_ordered_element_ref_from_string(content_node, &selector, &order)
+                    .unwrap()
+                    .get_string()
+            }
+            ParseInstruction::Regex(x) => RegexParser::create(content_node, x).get_element_ref().get_string(),
+        };
 
         let content = match &self.article.content {
-            Some(content) => get_element_ref(content_node, &content).unwrap(),
-            None => content_node,
+            Some(content) => match content {
+                ParseInstruction::Selectors(selector, order) => {
+                    get_ordered_element_ref_from_string(content_node, &selector, &order)
+                        .unwrap()
+                        .html()
+                }
+                ParseInstruction::Regex(x) => RegexParser::create(content_node, x).get_element_ref().html(),
+            },
+            None => content_node.html(),
         };
 
         let date = match &self.article.date {
-            Some(content) => Some(get_element_ref(content_node, content).unwrap().get_string()),
+            Some(content) => match content {
+                ParseInstruction::Selectors(selector, order) => Some(
+                    get_ordered_element_ref_from_string(content_node, &selector, &order)
+                        .unwrap()
+                        .get_string(),
+                ),
+                ParseInstruction::Regex(x) => Some(RegexParser::create(content_node, x).get_element_ref().get_string()),
+            },
             None => None,
         };
 
         Article {
-            headline: headline.get_string(),
-            content: content.html(),
+            headline: headline,
+            content: content,
             date: date,
         }
     }
@@ -77,17 +99,21 @@ impl Blog {
 
 fn get_content_node<'a>(document: &'a Html, instruction: &ParseInstruction) -> ElementRef<'a> {
     let root_node = document.select(&Selector::parse("html").unwrap()).next().unwrap();
-    get_element_ref(root_node, instruction).unwrap()
-}
-
-fn get_element_ref<'a>(node: ElementRef<'a>, instruction: &ParseInstruction) -> Option<ElementRef<'a>> {
     match instruction {
         ParseInstruction::Selectors(selector, order) => {
-            let selector = Selector::parse(&selector).expect(&format!("Could not parse {}", selector));
-            get_ordered_element_ref(node, &selector, &order)
+            get_ordered_element_ref_from_string(root_node, selector, order).unwrap()
         }
-        ParseInstruction::Regexp(x) => todo!(),
+        ParseInstruction::Regex(x) => todo!(),
     }
+}
+
+fn get_ordered_element_ref_from_string<'a>(
+    node: ElementRef<'a>,
+    selector: &String,
+    order: &Order,
+) -> Option<ElementRef<'a>> {
+    let selector = Selector::parse(&selector).expect(&format!("Could not parse {}", selector));
+    get_ordered_element_ref(node, &selector, &order)
 }
 
 fn get_ordered_element_ref<'a>(node: ElementRef<'a>, selector: &Selector, order: &Order) -> Option<ElementRef<'a>> {

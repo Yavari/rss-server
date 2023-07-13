@@ -1,4 +1,5 @@
 pub mod blog;
+pub mod RegexParser;
 pub mod element_ref_extensions;
 
 pub mod blog_parser {
@@ -37,7 +38,7 @@ pub mod blog_parser {
     #[derive(Clone)]
     pub enum ParseInstruction {
         Selectors(String, Order),
-        Regexp(String),
+        Regex(String),
     }
 
     #[derive(Clone)]
