@@ -1,33 +1,33 @@
 pub mod blog;
+pub mod blog_encoding;
 pub mod regex_parser;
 pub mod element_ref_extensions;
 
 pub mod blog_parser {
-    use reqwest::Client;
+    use serde::{Deserialize, Serialize};
 
-    #[derive(Clone)]
+    #[derive(Clone, Serialize, Deserialize)]
     pub struct Blog {
-        pub client: Client,
         pub url: String,
         pub url_suffix: Option<String>,
         pub index: BlogIndex,
         pub article: ArticleInstruction,
     }
 
-    #[derive(Debug, Clone)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct Article {
         pub headline: String,
         pub content: String,
         pub date: Option<String>,
     }
 
-    #[derive(Clone)]
+    #[derive(Clone, Serialize, Deserialize)]
     pub struct BlogIndex {
         pub section: ParseInstruction,
         pub link_selector: ParseInstruction,
     }
 
-    #[derive(Clone)]
+    #[derive(Clone, Serialize, Deserialize)]
     pub struct ArticleInstruction {
         pub section: ParseInstruction,
         pub headline: ParseInstruction,
@@ -35,13 +35,13 @@ pub mod blog_parser {
         pub content: Option<ParseInstruction>,
     }
 
-    #[derive(Clone)]
+    #[derive(Clone, Serialize, Deserialize)]
     pub enum ParseInstruction {
         Selectors(String, Order),
         Regex(String),
     }
 
-    #[derive(Clone)]
+    #[derive(Clone, Serialize, Deserialize)]
     pub enum Order {
         Normal(usize),
         Reverse(usize),

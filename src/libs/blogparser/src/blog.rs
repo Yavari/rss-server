@@ -1,4 +1,5 @@
 use once_cell::sync::Lazy;
+use reqwest::Client;
 use scraper::{ElementRef, Html, Selector};
 
 use crate::blog_parser::{Article, Blog, Order, ParseInstruction};
@@ -15,22 +16,17 @@ impl Blog {
         }
     }
 
-    pub async fn fetch_blog(self: &Blog) -> String {
-        self.fetch_url(&self.get_blog_url()).await
+    pub async fn fetch_blog(self: &Blog, client: &Client) -> String {
+        self.fetch_url(&self.get_blog_url(), client).await
     }
 
-    pub async fn fetch_article(self: &Blog, url: &str) -> String {
-        self.fetch_url(&format!("{}{}", &self.url, url)).await
+    pub async fn fetch_article(self: &Blog, url: &str, client: &Client) -> String {
+        self.fetch_url(&format!("{}{}", &self.url, url), client).await
     }
 
-    async fn fetch_url(self: &Blog, url: &str) -> String {
+    async fn fetch_url(self: &Blog, url: &str, client: &Client) -> String {
         println!("{}", url);
-        let result = self
-            .client
-            .get(url)
-            .send()
-            .await
-            .expect(&format!("Could not fetch {}", url));
+        let result = client.get(url).send().await.expect(&format!("Could not fetch {}", url));
 
         result.text().await.expect("Could not convert response to html")
     }
@@ -54,7 +50,7 @@ impl Blog {
             ParseInstruction::Regex(re) => {
                 let regex_parser = RegexParser::create_vec(&content_node.html(), re);
                 regex_parser.into_iter().map(|x| x.html().to_string()).collect()
-            },
+            }
         }
     }
 
@@ -95,7 +91,7 @@ impl Blog {
                     let fragment = parser.html();
                     let document = Html::parse_fragment(fragment);
                     Some(document.select(&SELECT_ALL).next().unwrap().get_string())
-                },
+                }
             },
             None => None,
         };
@@ -114,7 +110,7 @@ fn get_content_node<'a>(document: &'a Html, instruction: &ParseInstruction) -> E
         ParseInstruction::Selectors(selector, order) => {
             get_ordered_element_ref_from_string(root_node, selector, order).unwrap()
         }
-        ParseInstruction::Regex(x) => todo!(),
+        ParseInstruction::Regex(_) => todo!(),
     }
 }
 

@@ -13,9 +13,10 @@ pub async fn view() -> Html<String> {
 }
 
 pub async fn view_blog(Path(id): Path<usize>) -> Html<String> {
+    let client: Client = Client::new();
     let blog = get_blog(id);
     if let Some(blog) = blog {
-        let response = blog.fetch_blog().await;
+        let response = blog.fetch_blog(&client).await;
         let urls = blog.parse_links(&response);
         let a = urls
             .iter()
@@ -30,11 +31,12 @@ pub async fn view_blog(Path(id): Path<usize>) -> Html<String> {
 }
 
 pub async fn view_article(Path((id, path)): Path<(usize, String)>) -> Html<String> {
+    let client: Client = Client::new();
     println!("{}", path);
     let blog = get_blog(id);
     if let Some(blog) = blog {
         let url = "/".to_string() + &path;
-        let html = blog.fetch_article(&url).await;
+        let html = blog.fetch_article(&url, &client).await;
         let article = blog.parse_article(&html);
 
         let html = if let Some(date) = article.date{
@@ -50,10 +52,8 @@ pub async fn view_article(Path((id, path)): Path<(usize, String)>) -> Html<Strin
 }
 
 fn get_blogs() -> Vec<Blog> {
-    let client: Client = Client::new();
     vec![
         Blog {
-            client: client.clone(),
             url: "https://smallcultfollowing.com".to_string(),
             url_suffix: Some("babysteps".to_string()),
             index: BlogIndex {
@@ -77,7 +77,6 @@ fn get_blogs() -> Vec<Blog> {
             },
         },
         Blog {
-            client: client.clone(),
             url: "https://payam.yavari.se".to_string(),
             url_suffix: None,
             index: BlogIndex {
@@ -92,7 +91,6 @@ fn get_blogs() -> Vec<Blog> {
             },
         },
         Blog {
-            client: client.clone(),
             url: "https://payam.yavari.se".to_string(),
             url_suffix: None,
             index: BlogIndex {
