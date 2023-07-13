@@ -1,6 +1,7 @@
 mod api;
 mod middlewares;
 mod models;
+mod response;
 
 use axum::{
     middleware,
@@ -42,6 +43,7 @@ async fn main() {
             .route("/rss/blogs/:id", get(api::rss::view_blog))
             .route("/rss/blogs/:id/articles/*path", get(api::rss::view_article))
             .route("/rss_json/blogs", get(api::rss_json::view_blog))
+            .route("/rss_json", get(api::rss_json::view))
             .route("/rss_json/blogs/articles/*path", get(api::rss_json::view_article))
             .route_layer(middleware::from_fn_with_state(state, middlewares::azure_auth_middleware::azure_auth_middleware))
             .layer(TraceLayer::new_for_http())
