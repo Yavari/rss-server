@@ -1,8 +1,11 @@
+use once_cell::sync::Lazy;
 use scraper::{ElementRef, Html, Selector};
 
 use crate::blog_parser::{Article, Blog, Order, ParseInstruction};
 use crate::element_ref_extensions::Extensions;
 use crate::regex_parser::RegexParser;
+
+static SELECT_ALL: Lazy<Selector> = Lazy::new(|| Selector::parse("*").unwrap());
 
 impl Blog {
     fn get_blog_url(self: &Blog) -> String {
@@ -48,7 +51,10 @@ impl Blog {
                     .filter_map(|x| x.get_url())
                     .collect::<Vec<String>>()
             }
-            ParseInstruction::Regex(_) => todo!(),
+            ParseInstruction::Regex(re) => {
+                let regex_parser = RegexParser::create_vec(&content_node.html(), re);
+                regex_parser.into_iter().map(|x| x.html().to_string()).collect()
+            },
         }
     }
 
@@ -62,7 +68,7 @@ impl Blog {
                     .unwrap()
                     .get_string()
             }
-            ParseInstruction::Regex(x) => RegexParser::create(&content_node.html(), x).get_element_ref().get_string(),
+            ParseInstruction::Regex(x) => RegexParser::create(&content_node.html(), x).html().to_string(),
         };
 
         let content = match &self.article.content {
@@ -72,7 +78,7 @@ impl Blog {
                         .unwrap()
                         .html()
                 }
-                ParseInstruction::Regex(x) => RegexParser::create(&content_node.html(), x).get_element_ref().html(),
+                ParseInstruction::Regex(x) => RegexParser::create(&content_node.html(), x).html().to_string(),
             },
             None => content_node.html(),
         };
@@ -84,7 +90,12 @@ impl Blog {
                         .unwrap()
                         .get_string(),
                 ),
-                ParseInstruction::Regex(x) => Some(RegexParser::create(&content_node.html(), x).get_element_ref().get_string()),
+                ParseInstruction::Regex(x) => {
+                    let parser = RegexParser::create(&content_node.html(), x);
+                    let fragment = parser.html();
+                    let document = Html::parse_fragment(fragment);
+                    Some(document.select(&SELECT_ALL).next().unwrap().get_string())
+                },
             },
             None => None,
         };

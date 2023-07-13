@@ -91,6 +91,21 @@ fn get_blogs() -> Vec<Blog> {
                 date: Some(ParseInstruction::Regex(r"</h1>([\s\S]*?)<br>".to_string())),
             },
         },
+        Blog {
+            client: client.clone(),
+            url: "https://payam.yavari.se".to_string(),
+            url_suffix: None,
+            index: BlogIndex {
+                section: ParseInstruction::Selectors(".col-md-10".to_string(), Order::Normal(0)),
+                link_selector: ParseInstruction::Regex(r#"<a href="(.*)">"#.to_string()),
+            },
+            article: ArticleInstruction {
+                section: ParseInstruction::Selectors(".col-md-10".to_string(), Order::Normal(0)),
+                headline: ParseInstruction::Selectors("h1".to_string(), Order::Normal(0)),
+                content: None,
+                date: Some(ParseInstruction::Regex(r"</h1>([\s\S]*?)<br>".to_string())),
+            },
+        },
     ]
 }
 fn get_blog(index: usize) -> Option<Blog> {
