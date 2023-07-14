@@ -8,3 +8,7 @@ Add your application client id to config.toml
 
     [env]
     "AUD" = "<GUID>"
+
+docker build --progress=plain --no-cache -t rssserver .
+docker build -t rssserver .
+docker run -p 3030:3030 -e AUD=<GUID> --name=rssserver rssserver
