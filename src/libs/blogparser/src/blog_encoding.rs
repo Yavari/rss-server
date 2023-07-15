@@ -1,4 +1,4 @@
-use crate::blog_parser::Blog;
+use crate::{blog_parser::Blog, blog::BlogError};
 
 impl Blog {
     pub fn to_html_safe_string(&self) -> String {
@@ -13,7 +13,7 @@ impl Blog {
         serde_json::from_str(&b).unwrap()
     }
 
-    pub fn from_json(json: &str) -> Result<Blog, serde_json::Error> {
-        serde_json::from_str(&json)
+    pub fn from_json(json: &str) -> Result<Blog, BlogError> {
+        serde_json::from_str(&json).map_err(|x| BlogError::FromJsonParseError(x, json.to_owned()))
     }
 }

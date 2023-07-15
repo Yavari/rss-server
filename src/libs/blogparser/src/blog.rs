@@ -1,3 +1,4 @@
+use std::error::Error;
 use std::fmt;
 
 use once_cell::sync::Lazy;
@@ -142,13 +143,18 @@ fn get_ordered_element_ref<'a>(node: ElementRef<'a>, selector: &Selector, order:
 #[derive(Debug)]
 pub enum BlogError {
     OrderedElementNotFound(ParseInstruction),
+    FromJsonParseError(serde_json::Error, String),
 }
 
-impl std::error::Error for BlogError {
-}
+impl std::error::Error for BlogError {}
 
 impl fmt::Display for BlogError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Oh no, something bad went down")
+        match self {
+            BlogError::OrderedElementNotFound(_) => write!(f, "Oh no, something bad went down"),
+            BlogError::FromJsonParseError(e, json) => {
+                write!(f, "Could not parse json with error message: {}\n Json: {}", e, json)
+            }
+        }
     }
 }
