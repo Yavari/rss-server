@@ -1,5 +1,8 @@
 use axum::{extract::Path, response::Html};
-use blogparser::blog_parser::{ArticleInstruction, Blog, BlogIndex, Order, ParseInstruction};
+use blogparser::{
+    blog_client::{BlogClient, HttpClient},
+    blog_parser::{ArticleInstruction, Blog, BlogIndex, Order, ParseInstruction},
+};
 use reqwest::Client;
 
 pub async fn view() -> Html<String> {
@@ -13,14 +16,16 @@ pub async fn view() -> Html<String> {
 }
 
 pub async fn view_blog(Path(id): Path<usize>) -> Html<String> {
-    let client: Client = Client::new();
+    let client = Box::new(HttpClient::new(Client::new())) as Box<dyn BlogClient>;
     let blog = get_blog(id);
     if let Some(blog) = blog {
         let response = blog.fetch_blog(&client).await;
         let urls = blog.parse_links(&response);
         let urls = urls;
         if let Ok(urls) = urls {
-            let a = urls.iter().filter_map(|x| x.as_ref().ok())
+            let a = urls
+                .iter()
+                .filter_map(|x| x.as_ref().ok())
                 .map(|f| format!("<a href='/rss/blogs/{}/articles{}'>{}</a>", id, f, f))
                 .collect::<Vec<String>>()
                 .join("<br/>");
@@ -35,7 +40,7 @@ pub async fn view_blog(Path(id): Path<usize>) -> Html<String> {
 }
 
 pub async fn view_article(Path((id, path)): Path<(usize, String)>) -> Html<String> {
-    let client: Client = Client::new();
+    let client = Box::new(HttpClient::new(Client::new())) as Box<dyn BlogClient>;
     println!("{}", path);
     let blog = get_blog(id);
     if let Some(blog) = blog {

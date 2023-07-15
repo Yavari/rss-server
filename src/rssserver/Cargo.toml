@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 blogparser = { path = "../libs/blogparser" }
 axum = { version="0.6.4", features =["headers"] }
+axum-macros = "0.3.7"
 tokio = { version = "1.0", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
 tower = { version = "0.4" }

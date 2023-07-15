@@ -2,6 +2,7 @@ pub mod blog;
 pub mod blog_encoding;
 pub mod regex_parser;
 pub mod element_ref_extensions;
+pub mod blog_client;
 
 pub mod blog_parser {
     use serde::{Deserialize, Serialize};

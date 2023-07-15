@@ -4,6 +4,7 @@ use once_cell::sync::Lazy;
 use reqwest::Client;
 use scraper::{ElementRef, Html, Selector};
 
+use crate::blog_client::BlogClient;
 use crate::blog_parser::{Article, Blog, Order, ParseInstruction};
 use crate::element_ref_extensions::Extensions;
 use crate::regex_parser::RegexParser;
@@ -18,11 +19,11 @@ impl Blog {
         }
     }
 
-    pub async fn fetch_blog(&self, client: &Client) -> String {
+    pub async fn fetch_blog(&self, client: &Box<dyn BlogClient>) -> String {
         self.fetch_url(&self.get_blog_url(), client).await
     }
 
-    pub async fn fetch_article(&self, url: &str, client: &Client) -> String {
+    pub async fn fetch_article(&self, url: &str, client: &Box<dyn BlogClient>) -> String {
         self.fetch_url(&self.article_url(url), client).await
     }
 
@@ -30,11 +31,9 @@ impl Blog {
         format!("{}{}", self.url, url)
     }
 
-    async fn fetch_url(&self, url: &str, client: &Client) -> String {
+    async fn fetch_url(&self, url: &str, client: &Box<dyn BlogClient>) -> String {
         println!("{}", url);
-        let result = client.get(url).send().await.expect(&format!("Could not fetch {}", url));
-
-        result.text().await.expect("Could not convert response to html")
+        client.get_text(url).await
     }
 
     pub fn parse_links(&self, html: &String) -> Result<Vec<Result<String, BlogError>>, BlogError> {

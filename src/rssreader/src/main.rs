@@ -1,13 +1,12 @@
 use blogparser::{
     blog::BlogError,
-    blog_parser::{ArticleInstruction, Blog, BlogIndex, Order, ParseInstruction},
+    blog_parser::{ArticleInstruction, Blog, BlogIndex, Order, ParseInstruction}, blog_client::{HttpClient, BlogClient},
 };
 use reqwest::Client;
 
 #[tokio::main]
 async fn main() -> Result<(), BlogError> {
-    let client: Client = Client::new();
-
+    let client = Box::new(HttpClient::new( Client::new())) as Box<dyn BlogClient>;
     let blogs = vec![
         Blog {
             title: "Payam Yavari Blog".to_owned(),
