@@ -7,6 +7,7 @@ async fn main() -> Result<(), Error>{
 
     let blogs = vec![
         Blog {
+            title: "Payam Yavari Blog".to_owned(),
             url: "https://payam.yavari.se".to_string(),
             url_suffix: None,
             index: BlogIndex {
@@ -21,6 +22,7 @@ async fn main() -> Result<(), Error>{
             },
         },
         Blog {
+            title: "Small Cult Following".to_owned(),
             url: "https://smallcultfollowing.com".to_string(),
             url_suffix: Some("babysteps".to_string()),
             index: BlogIndex {

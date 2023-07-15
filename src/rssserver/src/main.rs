@@ -1,16 +1,12 @@
 mod api;
-mod middlewares;
-mod models;
 mod response;
+mod models;
 
 use axum::{
-    middleware,
-    routing::{get, post},
+    routing::get,
     Router, ServiceExt,
 };
-use azure_jwt::AzureAuth;
-use std::{net::SocketAddr, sync::{Arc, Mutex}};
-use tokio::task::spawn_blocking;
+use std::net::SocketAddr;
 
 use tower::layer::Layer;
 use tower_http::{normalize_path::NormalizePathLayer, trace::TraceLayer};
@@ -24,28 +20,15 @@ async fn main() {
         .with_max_level(tracing::Level::INFO)
         .init();
 
-    let azure_auth = spawn_blocking(|| get_az_auth())
-        .await
-        .expect("AzureAuth::new task spawn failed");
-
-    let state = models::app_state::AppState { 
-        azure_auth: Arc::new(Mutex::new(azure_auth)) 
-    };
-
     let app = NormalizePathLayer::trim_trailing_slash().layer(
         Router::new()
-            .route("/users/:id", get(api::users::get_user))
             .route("/", get(api::root::get))
             .route("/error", get(api::root::error))
-            .route_layer(middleware::from_fn(middlewares::require_authenticated_middleware::require_auth))
-            .route("/users", post(api::users::create_user))
             .route("/rss", get(api::rss::view))
             .route("/rss/blogs/:id", get(api::rss::view_blog))
             .route("/rss/blogs/:id/articles/*path", get(api::rss::view_article))
             .route("/rss_json/blogs", get(api::rss_json::view_blog))
-            .route("/rss_json", get(api::rss_json::view))
             .route("/rss_json/blogs/articles/*path", get(api::rss_json::view_article))
-            .route_layer(middleware::from_fn_with_state(state, middlewares::azure_auth_middleware::azure_auth_middleware))
             .layer(TraceLayer::new_for_http())
     );
 
@@ -55,9 +38,4 @@ async fn main() {
         .serve(app.into_make_service())
         .await
         .expect("Failed to start server");
-}
-
-fn get_az_auth() -> AzureAuth {
-    let aud = std::env::var("AUD").expect("Could not read AUD from environment variable");
-    AzureAuth::new(aud).expect("AUD not valid")
 }

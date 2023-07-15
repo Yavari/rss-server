@@ -8,6 +8,7 @@ pub mod blog_parser {
 
     #[derive(Clone, Serialize, Deserialize)]
     pub struct Blog {
+        pub title: String,
         pub url: String,
         pub url_suffix: Option<String>,
         pub index: BlogIndex,

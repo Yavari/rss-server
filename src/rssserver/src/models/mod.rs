@@ -1,2 +1,6 @@
-pub mod auth_context;
-pub mod app_state;
+use serde::Deserialize;
+
+#[derive(Deserialize)]
+pub struct Instructions {
+    pub json: String,
+}

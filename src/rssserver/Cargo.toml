@@ -14,7 +14,6 @@ tower = { version = "0.4" }
 tower-http = { version = "0.4", features = ["trace", "normalize-path"] }
 tracing-subscriber = "0.3"
 tracing = "0.1"
-azure_jwt = "0.2"
 reqwest = "0.11"
 rss = "2.0"
 futures = "0.3"

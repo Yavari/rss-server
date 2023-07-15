@@ -62,6 +62,7 @@ pub async fn view_article(Path((id, path)): Path<(usize, String)>) -> Html<Strin
 fn get_blogs() -> Vec<Blog> {
     vec![
         Blog {
+            title: "Small Cult Following".to_owned(),
             url: "https://smallcultfollowing.com".to_string(),
             url_suffix: Some("babysteps".to_string()),
             index: BlogIndex {
@@ -79,6 +80,7 @@ fn get_blogs() -> Vec<Blog> {
             },
         },
         Blog {
+            title: "Payam Yavari Blog".to_owned(),
             url: "https://payam.yavari.se".to_string(),
             url_suffix: None,
             index: BlogIndex {
@@ -93,6 +95,7 @@ fn get_blogs() -> Vec<Blog> {
             },
         },
         Blog {
+            title: "Payam Yavari Blog".to_owned(),
             url: "https://payam.yavari.se".to_string(),
             url_suffix: None,
             index: BlogIndex {
