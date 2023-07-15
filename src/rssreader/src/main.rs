@@ -1,8 +1,8 @@
-use blogparser::{blog_parser::{ArticleInstruction, Blog, BlogIndex, Order, ParseInstruction}, blog::Error};
+use blogparser::{blog_parser::{ArticleInstruction, Blog, BlogIndex, Order, ParseInstruction}, blog::BlogError};
 use reqwest::Client;
 
 #[tokio::main]
-async fn main() -> Result<(), Error>{
+async fn main() -> Result<(), BlogError>{
     let client: Client = Client::new();
 
     let blogs = vec![

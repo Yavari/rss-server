@@ -1,3 +1,5 @@
+use std::fmt;
+
 use once_cell::sync::Lazy;
 use reqwest::Client;
 use scraper::{ElementRef, Html, Selector};
@@ -35,7 +37,7 @@ impl Blog {
         result.text().await.expect("Could not convert response to html")
     }
 
-    pub fn parse_links(&self, html: &String) -> Result<Vec<String>, Error> {
+    pub fn parse_links(&self, html: &String) -> Result<Vec<String>, BlogError> {
         let document = Html::parse_document(html);
         let content_node = get_content_node(&document, &self.index.section)?;
 
@@ -61,7 +63,7 @@ impl Blog {
         }
     }
 
-    pub fn parse_article(self: &Blog, html: &String) -> Result<Article, Error> {
+    pub fn parse_article(self: &Blog, html: &String) -> Result<Article, BlogError> {
         let document = Html::parse_document(html);
         let content_node = get_content_node(&document, &self.article.section)?;
 
@@ -111,11 +113,11 @@ impl Blog {
     }
 }
 
-fn get_content_node<'a>(document: &'a Html, instruction: &ParseInstruction) -> Result<ElementRef<'a>, Error> {
+fn get_content_node<'a>(document: &'a Html, instruction: &ParseInstruction) -> Result<ElementRef<'a>, BlogError> {
     let root_node = document.select(&Selector::parse("html").unwrap()).next().unwrap();
     match instruction {
         ParseInstruction::Selectors(selector, order) => get_ordered_element_ref_from_string(root_node, selector, order)
-            .ok_or(Error::OrderedElementNotFound(instruction.clone())),
+            .ok_or(BlogError::OrderedElementNotFound(instruction.clone())),
         ParseInstruction::Regex(_) => todo!(),
     }
 }
@@ -138,6 +140,15 @@ fn get_ordered_element_ref<'a>(node: ElementRef<'a>, selector: &Selector, order:
 }
 
 #[derive(Debug)]
-pub enum Error {
+pub enum BlogError {
     OrderedElementNotFound(ParseInstruction),
+}
+
+impl std::error::Error for BlogError {
+}
+
+impl fmt::Display for BlogError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Oh no, something bad went down")
+    }
 }

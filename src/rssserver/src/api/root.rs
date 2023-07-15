@@ -1,42 +1,40 @@
-use axum::{
-    Json, extract::Query
-};
+use std::error::Error;
+
+use crate::{models::{Instructions, XmlError}, response::Xml};
+use axum::{extract::Query, Json};
 use blogparser::blog_parser::Blog;
 use reqwest::Client;
-use rss::{ChannelBuilder, ItemBuilder};
+use rss::{Channel, ChannelBuilder, ItemBuilder};
 
-use crate::{response::Xml, models::Instructions};
-
-pub async fn get(Query(query): Query<Instructions>) -> Xml<String> {
-    let client: Client = Client::new();
-    let blog = Blog::from_json(&query.json);
-    let response = blog.fetch_blog(&client).await;
-    let links = blog.parse_links(&response);
-    if let Ok(links) = links {
-        let items = links.into_iter().map(|url| get_article(&query, url, &client));
-        let items = futures::future::join_all(items).await;
-
-        let channel = ChannelBuilder::default()
-            .title(&blog.title.to_string())
-            .link(&blog.url.to_string())
-            .items(items)
-            .build();
-
-        return Xml(channel.to_string());
-    } else {
-        return Xml("Could not read index url".to_string());
+pub async fn get(Query(query): Query<Instructions>) -> Result<Xml<String>, Xml<String>> {
+    match get_blog(query).await {
+        Ok(channel) => Ok(Xml(channel.to_string())),
+        Err(e) => Err(XmlError::create("Something went wrong", e).get_response()),
     }
 }
-
 
 pub async fn error() -> Json<Message> {
     panic!("This is a test")
 }
 
+async fn get_blog(query: Instructions) -> Result<Channel, Box<dyn Error>> {
+    let client: Client = Client::new();
+    let blog = Blog::from_json(&query.json)?;
+    let response = blog.fetch_blog(&client).await;
+    let links = blog.parse_links(&response)?;
+    let items = links.into_iter().map(|url| get_article(&blog, url, &client));
+    let items = futures::future::join_all(items).await;
 
+    let channel = ChannelBuilder::default()
+        .title(&blog.title.to_string())
+        .link(&blog.url.to_string())
+        .items(items)
+        .build();
 
-async fn get_article(query: &Instructions, url: String, client: &Client) -> rss::Item {
-    let blog = Blog::from_json(&query.json);
+    return Ok(channel);
+}
+
+async fn get_article(blog: &Blog, url: String, client: &Client) -> rss::Item {
     let html = blog.fetch_article(&url, client).await;
     let article = blog.parse_article(&html);
     if let Ok(article) = article {

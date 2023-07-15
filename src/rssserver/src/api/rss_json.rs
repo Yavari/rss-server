@@ -10,7 +10,7 @@ use crate::models::Instructions;
 pub async fn view_blog(query: Query<Instructions>) -> Html<String> {
     let client: Client = Client::new();
     println!("{:?}", query.json);
-    let blog = Blog::from_json(&query.json);
+    let blog = Blog::from_json(&query.json).unwrap();
     let response = blog.fetch_blog(&client).await;
     let urls = blog.parse_links(&response);
     if let Ok(urls) = urls {
@@ -29,7 +29,7 @@ pub async fn view_blog(query: Query<Instructions>) -> Html<String> {
 pub async fn view_article(Path(path): Path<String>, Query(query): Query<Instructions>) -> Html<String> {
     let client: Client = Client::new();
     println!("{}", path);
-    let blog = Blog::from_json(&query.json);
+    let blog = Blog::from_json(&query.json).unwrap();
     let url = "/".to_string() + &path;
     let html = blog.fetch_article(&url, &client).await;
     let article = blog.parse_article(&html);

@@ -13,7 +13,7 @@ impl Blog {
         serde_json::from_str(&b).unwrap()
     }
 
-    pub fn from_json(json: &str) -> Blog {
-        serde_json::from_str(&json).unwrap()
+    pub fn from_json(json: &str) -> Result<Blog, serde_json::Error> {
+        serde_json::from_str(&json)
     }
 }
