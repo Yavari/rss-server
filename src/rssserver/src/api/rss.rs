@@ -20,7 +20,7 @@ pub async fn view_blog(Path(id): Path<usize>) -> Html<String> {
         let urls = blog.parse_links(&response);
         let urls = urls;
         if let Ok(urls) = urls {
-            let a = urls.iter()
+            let a = urls.iter().filter_map(|x| x.as_ref().ok())
                 .map(|f| format!("<a href='/rss/blogs/{}/articles{}'>{}</a>", id, f, f))
                 .collect::<Vec<String>>()
                 .join("<br/>");

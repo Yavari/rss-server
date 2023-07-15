@@ -27,8 +27,6 @@ async fn main() {
             .route("/rss", get(api::rss::view))
             .route("/rss/blogs/:id", get(api::rss::view_blog))
             .route("/rss/blogs/:id/articles/*path", get(api::rss::view_article))
-            .route("/rss_json/blogs", get(api::rss_json::view_blog))
-            .route("/rss_json/blogs/articles/*path", get(api::rss_json::view_article))
             .layer(TraceLayer::new_for_http())
     );
 

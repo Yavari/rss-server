@@ -1,4 +1,3 @@
-use std::error::Error;
 use std::fmt;
 
 use once_cell::sync::Lazy;
@@ -38,7 +37,7 @@ impl Blog {
         result.text().await.expect("Could not convert response to html")
     }
 
-    pub fn parse_links(&self, html: &String) -> Result<Vec<String>, BlogError> {
+    pub fn parse_links(&self, html: &String) -> Result<Vec<Result<String, BlogError>>, BlogError> {
         let document = Html::parse_document(html);
         let content_node = get_content_node(&document, &self.index.section)?;
 
@@ -50,15 +49,14 @@ impl Blog {
 
                 let links = selects
                     .map(|select| get_ordered_element_ref(select, &a_selector, order))
-                    .filter_map(|x| x)
-                    .filter_map(|x| x.get_url())
-                    .collect::<Vec<String>>();
+                    .map(|x| x.and_then(|y| Ok(y.get_url().unwrap())))
+                    .collect::<Vec<Result<String, BlogError>>>();
 
                 Ok(links)
             }
             ParseInstruction::Regex(re) => {
                 let regex_parser = RegexParser::create_vec(&content_node.html(), re);
-                let links = regex_parser.into_iter().map(|x| x.html().to_string()).collect();
+                let links = regex_parser.into_iter().map(|x|Ok(x.html().to_string())).collect();
                 Ok(links)
             }
         }
@@ -117,8 +115,7 @@ impl Blog {
 fn get_content_node<'a>(document: &'a Html, instruction: &ParseInstruction) -> Result<ElementRef<'a>, BlogError> {
     let root_node = document.select(&Selector::parse("html").unwrap()).next().unwrap();
     match instruction {
-        ParseInstruction::Selectors(selector, order) => get_ordered_element_ref_from_string(root_node, selector, order)
-            .ok_or(BlogError::OrderedElementNotFound(instruction.clone())),
+        ParseInstruction::Selectors(selector, order) => get_ordered_element_ref_from_string(root_node, selector, order),
         ParseInstruction::Regex(_) => todo!(),
     }
 }
@@ -127,22 +124,28 @@ fn get_ordered_element_ref_from_string<'a>(
     node: ElementRef<'a>,
     selector: &String,
     order: &Order,
-) -> Option<ElementRef<'a>> {
-    let selector = Selector::parse(&selector).expect(&format!("Could not parse {}", selector));
-    get_ordered_element_ref(node, &selector, &order)
+) -> Result<ElementRef<'a>, BlogError> {
+    let s = Selector::parse(&selector).expect(&format!("Could not parse {}", selector));
+    get_ordered_element_ref(node, &s, &order)
 }
 
-fn get_ordered_element_ref<'a>(node: ElementRef<'a>, selector: &Selector, order: &Order) -> Option<ElementRef<'a>> {
+fn get_ordered_element_ref<'a>(
+    node: ElementRef<'a>,
+    selector: &Selector,
+    order: &Order,
+) -> Result<ElementRef<'a>, BlogError> {
     let select = node.select(&selector);
-    match order {
+    let result = match order {
         Order::Normal(n) => select.skip(*n).next(),
         Order::Reverse(n) => select.collect::<Vec<_>>().into_iter().rev().skip(*n).next(),
-    }
+    };
+
+    result.ok_or(BlogError::OrderedElementNotFound(selector.to_owned(), order.clone()))
 }
 
 #[derive(Debug)]
 pub enum BlogError {
-    OrderedElementNotFound(ParseInstruction),
+    OrderedElementNotFound(Selector, Order),
     FromJsonParseError(serde_json::Error, String),
 }
 
@@ -151,7 +154,7 @@ impl std::error::Error for BlogError {}
 impl fmt::Display for BlogError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            BlogError::OrderedElementNotFound(_) => write!(f, "Oh no, something bad went down"),
+            BlogError::OrderedElementNotFound(selector, order) => write!(f, "Could not find ordered element {:?} {:?}", selector, order),
             BlogError::FromJsonParseError(e, json) => {
                 write!(f, "Could not parse json with error message: {}\n Json: {}", e, json)
             }

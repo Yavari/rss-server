@@ -1,6 +1,9 @@
 use std::error::Error;
-
-use crate::{models::{Instructions, XmlError}, response::Xml};
+use tracing::error;
+use crate::{
+    models::{Instructions, XmlError},
+    response::Xml,
+};
 use axum::{extract::Query, Json};
 use blogparser::blog_parser::Blog;
 use reqwest::Client;
@@ -21,8 +24,16 @@ async fn get_blog(query: Instructions) -> Result<Channel, Box<dyn Error>> {
     let client: Client = Client::new();
     let blog = Blog::from_json(&query.json)?;
     let response = blog.fetch_blog(&client).await;
-    let links = blog.parse_links(&response)?;
-    let items = links.into_iter().map(|url| get_article(&blog, url, &client));
+    let links = &blog.parse_links(&response)?;
+
+    for l in links.into_iter().filter_map(|x| x.as_ref().err()) {
+        error!("Could not parse link: {}", l);
+    }
+
+    let items = links
+        .into_iter()
+        .filter_map(|x| x.as_ref().ok())
+        .map(|url| get_article(&blog, url, &client));
     let items = futures::future::join_all(items).await;
 
     let channel = ChannelBuilder::default()
@@ -34,7 +45,7 @@ async fn get_blog(query: Instructions) -> Result<Channel, Box<dyn Error>> {
     return Ok(channel);
 }
 
-async fn get_article(blog: &Blog, url: String, client: &Client) -> rss::Item {
+async fn get_article(blog: &Blog, url: &str, client: &Client) -> rss::Item {
     let html = blog.fetch_article(&url, client).await;
     let article = blog.parse_article(&html);
     if let Ok(article) = article {
