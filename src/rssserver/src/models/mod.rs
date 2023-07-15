@@ -16,7 +16,7 @@ pub struct XmlError {
 
 impl XmlError {
     pub fn create(message: &str, e: Box<dyn Error>) -> XmlError {
-        let e = format!("Something went wrong {}", e);
+        let e = format!("Something went wrong.\n{}", e);
         error!(e);
         XmlError {
             message: message.to_owned(),
