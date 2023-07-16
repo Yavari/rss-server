@@ -11,20 +11,22 @@ impl Blog {
     }
 
     async fn fetch_url(&self, url: &str, client: &Client) -> Result<String, BlogError> {
-        println!("{}", url);
+        println!("{url}");
         let result = client
             .get(url)
             .send()
             .await
-            .map_err(|x| BlogError::Generic(format!("Could not fetch {}. {}", url, x)))?;
-        result.text().await.map_err(|x| BlogError::Generic(format!("Could read text {}. {}", url, x)))
+            .map_err(|x| BlogError::Generic(format!("Could not fetch {url}. {x}")))?;
+        result
+            .text()
+            .await
+            .map_err(|x| BlogError::Generic(format!("Could read text {url}. {x}")))
     }
 
     fn blog_url(&self) -> String {
-        match &self.url_suffix {
-            Some(suffix) => format!("{}/{}", &self.url, &suffix),
-            None => self.url.clone(),
-        }
+        self.url_suffix
+            .as_ref()
+            .map_or_else(|| self.url.clone(), |suffix| format!("{}/{}", &self.url, &suffix))
     }
 
     pub fn article_url(&self, url: &str) -> String {

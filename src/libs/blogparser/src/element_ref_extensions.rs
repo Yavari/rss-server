@@ -11,6 +11,6 @@ impl Extensions for ElementRef<'_> {
     }
 
     fn get_url(self) -> Option<String> {
-        self.value().attr("href").map(|e| e.to_string())
+        self.value().attr("href").map(ToString::to_string)
     }
 }

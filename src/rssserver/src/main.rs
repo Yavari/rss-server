@@ -8,7 +8,7 @@ use std::net::SocketAddr;
 
 use tower::layer::Layer;
 use tower_http::{normalize_path::NormalizePathLayer, trace::TraceLayer};
-use tracing_subscriber;
+
 
 use crate::models::AppState;
 

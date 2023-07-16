@@ -35,9 +35,9 @@ pub async fn view_blog(state: State<AppState>, Path(id): Path<usize>) -> Html<St
                 return Html(a);
             }
         }
-        return Html("Error".to_string());
+        Html("Error".to_string())
     } else {
-        return Html("Not found".to_string());
+        Html("Not found".to_string())
     }
 }
 
@@ -59,9 +59,9 @@ pub async fn view_article(state: State<AppState>, Path((id, path)): Path<(usize,
                 return Html(html);
             }
         }
-        return Html("ERROR".to_string());
+        Html("ERROR".to_string())
     } else {
-        return Html("Not found".to_string());
+        Html("Not found".to_string())
     }
 }
 
@@ -118,5 +118,5 @@ fn get_blogs() -> Vec<Blog> {
     ]
 }
 fn get_blog(index: usize) -> Option<Blog> {
-    get_blogs().iter().skip(index).next().map(|f| (*f).clone())
+    get_blogs().get(index).map(|f| (*f).clone())
 }

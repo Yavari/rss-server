@@ -1,6 +1,16 @@
+#![warn(
+    clippy::all,
+    clippy::pedantic,
+    clippy::nursery,
+    clippy::cargo,
+)]
+
+
 pub mod blog_encoding;
 pub mod blog_getter;
 pub mod element_ref_extensions;
+use core::fmt;
+
 use serde::{Deserialize, Serialize};
 
 mod blog_parser;
@@ -59,4 +69,23 @@ pub enum BlogError {
     SelectorError(String),
     Generic(String),
     RegEx(regex::Error)
+}
+
+impl std::error::Error for BlogError {}
+
+impl fmt::Display for BlogError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Self::OrderedElementNotFound(selector, order) => {
+                write!(f, "Could not find ordered element {selector:?} {order:?}")
+            }
+            Self::FromJsonParseError(e, json) => {
+                write!(f, "Could not parse json with error message: {e}\n Json: {json}")
+            }
+
+            Self::SelectorError(selector) => write!(f, "Could not parse selector {selector}"),
+            Self::Generic(message) => write!(f, "{message}"),
+            Self::RegEx(x) => write!(f, "Could not parse regex: {x}"),
+        }
+    }
 }
