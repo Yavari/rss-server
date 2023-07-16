@@ -13,11 +13,7 @@ mod tests {
         <li></li>
         </ul></div>"#.to_string();
         let links = parse_links(&blog, &html).unwrap();
-        let parsed = get_ok(&links);
-        assert_eq!(parsed, vec!["url1", "url2"]);
-
-        let error = get_err(&links);
-        assert_eq!(error, vec!["Could not find ordered element Selector { selectors: [Selector(a, specificity = 0x1, flags = SelectorFlags(0x0))] } Normal(0)"]);
+        assert_eq!(links, vec!["url1", "url2"]);
     }
 
     #[test]
@@ -32,22 +28,6 @@ mod tests {
         <li></li>
         </ul></div>"#.to_string();
         let links = parse_links(&blog, &html).unwrap();
-        let parsed = get_ok(&links);
-        assert_eq!(parsed, vec!["url1", "url2"]);
-
-        let error = get_err(&links);
-        assert_eq!(error.len(), 0);
-    }
-
-    fn get_ok(links: &Vec<Result<String, crate::BlogError>>) -> Vec<String> {
-        links.into_iter().filter_map(|x| x.as_ref().ok().cloned()).collect()
-    }
-
-    fn get_err(links: &Vec<Result<String, crate::BlogError>>) -> Vec<String> {
-        links
-            .into_iter()
-            .filter_map(|x| x.as_ref().err())
-            .map(|x| x.to_string())
-            .collect()
+        assert_eq!(links, vec!["url1", "url2"]);
     }
 }

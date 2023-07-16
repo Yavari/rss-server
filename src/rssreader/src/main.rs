@@ -54,7 +54,7 @@ async fn main() -> Result<(), BlogError> {
         let urls = parse_links(&blog.index, &response)?;
         println!("{:?}", urls);
 
-        for url in urls.into_iter().filter_map(|x| x.ok()) {
+        for url in urls.into_iter() {
             let html = blog.fetch_article(&url, &client).await;
             println!("{:?}", parse_article(&blog.article, &html));
             return Ok(());

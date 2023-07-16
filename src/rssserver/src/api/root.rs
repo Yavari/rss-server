@@ -14,7 +14,6 @@ use blogparser::{
 use reqwest::Client;
 use rss::{Channel, ChannelBuilder, ItemBuilder};
 use std::error::Error;
-use tracing::error;
 
 #[debug_handler]
 pub async fn get(state: State<AppState>, Query(query): Query<Instructions>) -> Result<Xml<String>, Xml<String>> {
@@ -33,13 +32,8 @@ async fn get_blog(client: &Client, query: Instructions) -> Result<Channel, Box<d
     let response = blog.fetch_blog(&client).await;
     let links = parse_links(&blog.index, &response)?;
 
-    for l in (&links).into_iter().filter_map(|x| x.as_ref().err()) {
-        error!("Could not parse link: {}", l);
-    }
-
     let items = (&links)
         .into_iter()
-        .filter_map(|x| x.as_ref().ok())
         .map(|url| get_article(&client, &blog, url));
     let items = futures::future::join_all(items).await;
 

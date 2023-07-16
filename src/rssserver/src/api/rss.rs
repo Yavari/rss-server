@@ -27,7 +27,6 @@ pub async fn view_blog(state: State<AppState>, Path(id): Path<usize>) -> Html<St
         if let Ok(urls) = urls {
             let a = urls
                 .iter()
-                .filter_map(|x| x.as_ref().ok())
                 .map(|f| format!("<a href='/rss/blogs/{}/articles{}'>{}</a>", id, f, f))
                 .collect::<Vec<String>>()
                 .join("<br/>");
