@@ -1,48 +1,22 @@
 use std::fmt;
 
 use once_cell::sync::Lazy;
-use reqwest::Client;
 use scraper::{ElementRef, Html, Selector};
 
-use crate::blog_client::BlogClient;
-use crate::blog_parser::{Article, Blog, Order, ParseInstruction};
 use crate::element_ref_extensions::Extensions;
 use crate::regex_parser::RegexParser;
+use crate::{Article, Blog, Order, ParseInstruction};
 
 static SELECT_ALL: Lazy<Selector> = Lazy::new(|| Selector::parse("*").unwrap());
 
 impl Blog {
-    fn get_blog_url(&self) -> String {
-        match &self.url_suffix {
-            Some(suffix) => format!("{}/{}", &self.url, &suffix),
-            None => self.url.clone(),
-        }
-    }
-
-    pub async fn fetch_blog(&self, client: &Box<dyn BlogClient>) -> String {
-        self.fetch_url(&self.get_blog_url(), client).await
-    }
-
-    pub async fn fetch_article(&self, url: &str, client: &Box<dyn BlogClient>) -> String {
-        self.fetch_url(&self.article_url(url), client).await
-    }
-
-    pub fn article_url(&self, url: &str) -> String {
-        format!("{}{}", self.url, url)
-    }
-
-    async fn fetch_url(&self, url: &str, client: &Box<dyn BlogClient>) -> String {
-        println!("{}", url);
-        client.get_text(url).await
-    }
-
     pub fn parse_links(&self, html: &String) -> Result<Vec<Result<String, BlogError>>, BlogError> {
         let document = Html::parse_document(html);
         let content_node = get_content_node(&document, &self.index.section)?;
 
         match &self.index.link_selector {
             ParseInstruction::Selectors(selector, order) => {
-                let outer_selector = Selector::parse(&selector).expect(&format!("Could not parsej{}", selector));
+                let outer_selector = Selector::parse(&selector).expect(&format!("Could not parse {}", selector));
                 let a_selector = Selector::parse("a").expect(&format!("Could not parsej{}", "a"));
                 let selects = content_node.select(&outer_selector);
 
@@ -55,7 +29,7 @@ impl Blog {
             }
             ParseInstruction::Regex(re) => {
                 let regex_parser = RegexParser::create_vec(&content_node.html(), re);
-                let links = regex_parser.into_iter().map(|x|Ok(x.html().to_string())).collect();
+                let links = regex_parser.into_iter().map(|x| Ok(x.html().to_string())).collect();
                 Ok(links)
             }
         }
@@ -153,7 +127,9 @@ impl std::error::Error for BlogError {}
 impl fmt::Display for BlogError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            BlogError::OrderedElementNotFound(selector, order) => write!(f, "Could not find ordered element {:?} {:?}", selector, order),
+            BlogError::OrderedElementNotFound(selector, order) => {
+                write!(f, "Could not find ordered element {:?} {:?}", selector, order)
+            }
             BlogError::FromJsonParseError(e, json) => {
                 write!(f, "Could not parse json with error message: {}\n Json: {}", e, json)
             }

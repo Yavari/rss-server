@@ -6,7 +6,7 @@ use axum::{extract::Query, Json};
 use axum_macros::debug_handler;
 use blogparser::{
     blog_client::{BlogClient, HttpClient},
-    blog_parser::Blog,
+    Blog,
 };
 use reqwest::Client;
 use rss::{Channel, ChannelBuilder, ItemBuilder};

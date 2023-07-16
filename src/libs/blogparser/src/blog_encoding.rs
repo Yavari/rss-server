@@ -1,4 +1,4 @@
-use crate::{blog_parser::Blog, blog::BlogError};
+use crate::{blog_parser::BlogError, Blog};
 
 impl Blog {
     pub fn to_html_safe_string(&self) -> String {
@@ -9,7 +9,7 @@ impl Blog {
 
     pub fn from_html_safe_string(query: &str) -> Blog {
         let b = serde_urlencoded::from_str::<Vec<(String, String)>>(query).unwrap();
-        let (_, b) =  b.into_iter().next().unwrap();
+        let (_, b) = b.into_iter().next().unwrap();
         serde_json::from_str(&b).unwrap()
     }
 

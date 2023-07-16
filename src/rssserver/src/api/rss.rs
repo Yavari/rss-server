@@ -1,7 +1,7 @@
 use axum::{extract::Path, response::Html};
 use blogparser::{
     blog_client::{BlogClient, HttpClient},
-    blog_parser::{ArticleInstruction, Blog, BlogIndex, Order, ParseInstruction},
+    {ArticleInstruction, Blog, BlogIndex, Order, ParseInstruction},
 };
 use reqwest::Client;
 
