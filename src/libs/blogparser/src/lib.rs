@@ -1,10 +1,16 @@
 pub mod blog_encoding;
 pub mod blog_getter;
-pub mod blog_parser;
 pub mod element_ref_extensions;
 pub mod regex_parser;
 use scraper::Selector;
 use serde::{Deserialize, Serialize};
+
+mod blog_parser;
+
+
+pub use blog_parser::parse_article as parse_article;
+pub use blog_parser::parse_links as parse_links;
+
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Blog {

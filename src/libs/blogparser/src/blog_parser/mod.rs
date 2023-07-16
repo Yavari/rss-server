@@ -1,0 +1,132 @@
+use std::fmt;
+
+use once_cell::sync::Lazy;
+use scraper::{ElementRef, Html, Selector};
+
+use crate::element_ref_extensions::Extensions;
+use crate::regex_parser::RegexParser;
+use crate::{Article, ArticleInstruction, BlogError, BlogIndex, Order, ParseInstruction};
+
+mod blog_index_tests;
+
+static SELECT_ALL: Lazy<Selector> = Lazy::new(|| Selector::parse("*").unwrap());
+
+pub fn parse_links(blog: &BlogIndex, html: &String) -> Result<Vec<Result<String, BlogError>>, BlogError> {
+    let document = Html::parse_document(html);
+    let content_node = get_content_node(&document, &blog.section)?;
+
+    match &blog.link_selector {
+        ParseInstruction::Selectors(selector, order) => {
+            let outer_selector = Selector::parse(&selector).expect(&format!("Could not parse {}", selector));
+            let a_selector = Selector::parse("a").expect(&format!("Could not parsej{}", "a"));
+            let selects = content_node.select(&outer_selector);
+
+            let links = selects
+                .map(|select| get_ordered_element_ref(select, &a_selector, order))
+                .map(|x| x.and_then(|y| Ok(y.get_url().unwrap())))
+                .collect::<Vec<Result<String, BlogError>>>();
+
+            Ok(links)
+        }
+        ParseInstruction::Regex(re) => {
+            let regex_parser = RegexParser::create_vec(&content_node.html(), re);
+            let links = regex_parser.into_iter().map(|x| Ok(x.html().to_string())).collect();
+            Ok(links)
+        }
+    }
+}
+
+pub fn parse_article(blog: &ArticleInstruction, html: &String) -> Result<Article, BlogError> {
+    let document = Html::parse_document(html);
+    let content_node = get_content_node(&document, &blog.section)?;
+
+    let headline = match &blog.headline {
+        ParseInstruction::Selectors(selector, order) => {
+            get_ordered_element_ref_from_string(content_node, &selector, &order)
+                .unwrap()
+                .get_string()
+        }
+        ParseInstruction::Regex(x) => RegexParser::create(&content_node.html(), x).html().to_string(),
+    };
+
+    let content = match &blog.content {
+        Some(content) => match content {
+            ParseInstruction::Selectors(selector, order) => {
+                get_ordered_element_ref_from_string(content_node, &selector, &order)
+                    .unwrap()
+                    .html()
+            }
+            ParseInstruction::Regex(x) => RegexParser::create(&content_node.html(), x).html().to_string(),
+        },
+        None => content_node.html(),
+    };
+
+    let date = match &blog.date {
+        Some(content) => match content {
+            ParseInstruction::Selectors(selector, order) => Some(
+                get_ordered_element_ref_from_string(content_node, &selector, &order)
+                    .unwrap()
+                    .get_string(),
+            ),
+            ParseInstruction::Regex(x) => {
+                let parser = RegexParser::create(&content_node.html(), x);
+                let fragment = parser.html();
+                let document = Html::parse_fragment(fragment);
+                Some(document.select(&SELECT_ALL).next().unwrap().get_string())
+            }
+        },
+        None => None,
+    };
+
+    Ok(Article {
+        headline: headline,
+        content: content,
+        date: date,
+    })
+}
+
+fn get_content_node<'a>(document: &'a Html, instruction: &ParseInstruction) -> Result<ElementRef<'a>, BlogError> {
+    let root_node = document.select(&Selector::parse("html").unwrap()).next().unwrap();
+    match instruction {
+        ParseInstruction::Selectors(selector, order) => get_ordered_element_ref_from_string(root_node, selector, order),
+        ParseInstruction::Regex(_) => todo!(),
+    }
+}
+
+fn get_ordered_element_ref_from_string<'a>(
+    node: ElementRef<'a>,
+    selector: &String,
+    order: &Order,
+) -> Result<ElementRef<'a>, BlogError> {
+    let s = Selector::parse(&selector).expect(&format!("Could not parse {}", selector));
+    get_ordered_element_ref(node, &s, &order)
+}
+
+fn get_ordered_element_ref<'a>(
+    node: ElementRef<'a>,
+    selector: &Selector,
+    order: &Order,
+) -> Result<ElementRef<'a>, BlogError> {
+    let select = node.select(&selector);
+    let result = match order {
+        Order::Normal(n) => select.skip(*n).next(),
+        Order::Reverse(n) => select.collect::<Vec<_>>().into_iter().rev().skip(*n).next(),
+    };
+
+    result.ok_or(BlogError::OrderedElementNotFound(selector.to_owned(), order.clone()))
+}
+
+impl std::error::Error for BlogError {}
+
+impl fmt::Display for BlogError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            BlogError::OrderedElementNotFound(selector, order) => {
+                write!(f, "Could not find ordered element {:?} {:?}", selector, order)
+            }
+            BlogError::FromJsonParseError(e, json) => {
+                write!(f, "Could not parse json with error message: {}\n Json: {}", e, json)
+            }
+        }
+    }
+}

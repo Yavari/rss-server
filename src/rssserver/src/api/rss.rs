@@ -3,7 +3,7 @@ use axum::{
     response::Html,
 };
 use blogparser::{
-    {ArticleInstruction, Blog, BlogIndex, Order, ParseInstruction},
+    {parse_article, parse_links}, {ArticleInstruction, Blog, BlogIndex, Order, ParseInstruction},
 };
 
 use crate::AppState;
@@ -22,7 +22,7 @@ pub async fn view_blog(state: State<AppState>, Path(id): Path<usize>) -> Html<St
     let blog = get_blog(id);
     if let Some(blog) = blog {
         let response = blog.fetch_blog(&state.client).await;
-        let urls = blog.parse_links(&response);
+        let urls = parse_links(&blog.index, &response);
         let urls = urls;
         if let Ok(urls) = urls {
             let a = urls
@@ -47,7 +47,7 @@ pub async fn view_article(state: State<AppState>, Path((id, path)): Path<(usize,
     if let Some(blog) = blog {
         let url = "/".to_string() + &path;
         let html = blog.fetch_article(&url, &state.client).await;
-        let article = blog.parse_article(&html);
+        let article = parse_article(&blog.article, &html);
 
         if let Ok(article) = article {
             let html = if let Some(date) = article.date {

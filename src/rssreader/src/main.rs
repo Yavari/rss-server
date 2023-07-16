@@ -1,5 +1,5 @@
 use blogparser::{
-    {ArticleInstruction, Blog, BlogIndex, Order, ParseInstruction}, BlogError,
+    BlogError, {parse_article, parse_links}, {ArticleInstruction, Blog, BlogIndex, Order, ParseInstruction},
 };
 use reqwest::Client;
 
@@ -51,12 +51,12 @@ async fn main() -> Result<(), BlogError> {
         let str = &blog.to_html_safe_string();
         let blog = Blog::from_html_safe_string(str);
         let response = blog.fetch_blog(&client).await;
-        let urls = blog.parse_links(&response)?;
+        let urls = parse_links(&blog.index, &response)?;
         println!("{:?}", urls);
 
         for url in urls.into_iter().filter_map(|x| x.ok()) {
             let html = blog.fetch_article(&url, &client).await;
-            println!("{:?}", blog.parse_article(&html));
+            println!("{:?}", parse_article(&blog.article, &html));
             return Ok(());
         }
     }

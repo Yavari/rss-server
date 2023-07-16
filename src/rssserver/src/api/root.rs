@@ -8,7 +8,9 @@ use axum::{
     Json,
 };
 use axum_macros::debug_handler;
-use blogparser::Blog;
+use blogparser::{
+    Blog, {parse_article, parse_links},
+};
 use reqwest::Client;
 use rss::{Channel, ChannelBuilder, ItemBuilder};
 use std::error::Error;
@@ -29,13 +31,13 @@ pub async fn error() -> Json<Message> {
 async fn get_blog(client: &Client, query: Instructions) -> Result<Channel, Box<dyn Error>> {
     let blog = Blog::from_json(&query.json)?;
     let response = blog.fetch_blog(&client).await;
-    let links = &blog.parse_links(&response)?;
+    let links = parse_links(&blog.index, &response)?;
 
-    for l in links.into_iter().filter_map(|x| x.as_ref().err()) {
+    for l in (&links).into_iter().filter_map(|x| x.as_ref().err()) {
         error!("Could not parse link: {}", l);
     }
 
-    let items = links
+    let items = (&links)
         .into_iter()
         .filter_map(|x| x.as_ref().ok())
         .map(|url| get_article(&client, &blog, url));
@@ -52,7 +54,7 @@ async fn get_blog(client: &Client, query: Instructions) -> Result<Channel, Box<d
 
 async fn get_article(client: &Client, blog: &Blog, url: &str) -> rss::Item {
     let html = blog.fetch_article(&url, client).await;
-    let article = blog.parse_article(&html);
+    let article = parse_article(&blog.article, &html);
     if let Ok(article) = article {
         ItemBuilder::default()
             .title(Some(article.headline))
