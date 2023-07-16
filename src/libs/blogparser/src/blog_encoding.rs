@@ -1,4 +1,4 @@
-use crate::{blog_parser::BlogError, Blog};
+use crate::{Blog, BlogError};
 
 impl Blog {
     pub fn to_html_safe_string(&self) -> String {

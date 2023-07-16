@@ -5,7 +5,7 @@ use scraper::{ElementRef, Html, Selector};
 
 use crate::element_ref_extensions::Extensions;
 use crate::regex_parser::RegexParser;
-use crate::{Article, Blog, Order, ParseInstruction};
+use crate::{Article, Blog, Order, ParseInstruction, BlogError};
 
 static SELECT_ALL: Lazy<Selector> = Lazy::new(|| Selector::parse("*").unwrap());
 
@@ -114,12 +114,6 @@ fn get_ordered_element_ref<'a>(
     };
 
     result.ok_or(BlogError::OrderedElementNotFound(selector.to_owned(), order.clone()))
-}
-
-#[derive(Debug)]
-pub enum BlogError {
-    OrderedElementNotFound(Selector, Order),
-    FromJsonParseError(serde_json::Error, String),
 }
 
 impl std::error::Error for BlogError {}

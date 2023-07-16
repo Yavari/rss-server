@@ -1,6 +1,5 @@
 use blogparser::{
-    blog_parser::BlogError,
-    {ArticleInstruction, Blog, BlogIndex, Order, ParseInstruction},
+    {ArticleInstruction, Blog, BlogIndex, Order, ParseInstruction}, BlogError,
 };
 use reqwest::Client;
 

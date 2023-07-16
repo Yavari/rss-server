@@ -3,6 +3,7 @@ pub mod blog_getter;
 pub mod blog_parser;
 pub mod element_ref_extensions;
 pub mod regex_parser;
+use scraper::Selector;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -45,4 +46,10 @@ pub enum ParseInstruction {
 pub enum Order {
     Normal(usize),
     Reverse(usize),
+}
+
+#[derive(Debug)]
+pub enum BlogError {
+    OrderedElementNotFound(Selector, Order),
+    FromJsonParseError(serde_json::Error, String),
 }
