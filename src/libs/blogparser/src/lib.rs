@@ -1,4 +1,3 @@
-pub mod blog_client;
 pub mod blog_encoding;
 pub mod blog_getter;
 pub mod blog_parser;

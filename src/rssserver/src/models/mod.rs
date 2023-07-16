@@ -1,5 +1,6 @@
 use std::error::Error;
 
+use reqwest::Client;
 use serde::Deserialize;
 use tracing::error;
 
@@ -25,4 +26,9 @@ impl XmlError {
     pub fn get_response(&self) -> Xml<String> {
         Xml(format!("<error>{}</error>",self.message))
     }
+}
+
+#[derive(Clone)]
+pub struct AppState {
+    pub client: Client,
 }

@@ -1,9 +1,12 @@
-use axum::{extract::Path, response::Html};
+use axum::{
+    extract::{Path, State},
+    response::Html,
+};
 use blogparser::{
-    blog_client::{BlogClient, HttpClient},
     {ArticleInstruction, Blog, BlogIndex, Order, ParseInstruction},
 };
-use reqwest::Client;
+
+use crate::AppState;
 
 pub async fn view() -> Html<String> {
     let blogs = get_blogs()
@@ -15,11 +18,10 @@ pub async fn view() -> Html<String> {
     Html(blogs)
 }
 
-pub async fn view_blog(Path(id): Path<usize>) -> Html<String> {
-    let client = Box::new(HttpClient::new(Client::new())) as Box<dyn BlogClient>;
+pub async fn view_blog(state: State<AppState>, Path(id): Path<usize>) -> Html<String> {
     let blog = get_blog(id);
     if let Some(blog) = blog {
-        let response = blog.fetch_blog(&client).await;
+        let response = blog.fetch_blog(&state.client).await;
         let urls = blog.parse_links(&response);
         let urls = urls;
         if let Ok(urls) = urls {
@@ -39,13 +41,12 @@ pub async fn view_blog(Path(id): Path<usize>) -> Html<String> {
     }
 }
 
-pub async fn view_article(Path((id, path)): Path<(usize, String)>) -> Html<String> {
-    let client = Box::new(HttpClient::new(Client::new())) as Box<dyn BlogClient>;
+pub async fn view_article(state: State<AppState>, Path((id, path)): Path<(usize, String)>) -> Html<String> {
     println!("{}", path);
     let blog = get_blog(id);
     if let Some(blog) = blog {
         let url = "/".to_string() + &path;
-        let html = blog.fetch_article(&url, &client).await;
+        let html = blog.fetch_article(&url, &state.client).await;
         let article = blog.parse_article(&html);
 
         if let Ok(article) = article {
