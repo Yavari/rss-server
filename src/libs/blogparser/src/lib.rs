@@ -1,11 +1,3 @@
-#![warn(
-    clippy::all,
-    clippy::pedantic,
-    clippy::nursery,
-    clippy::cargo,
-)]
-
-
 pub mod blog_encoding;
 pub mod blog_getter;
 pub mod element_ref_extensions;

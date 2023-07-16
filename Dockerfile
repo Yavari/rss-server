@@ -1,8 +1,8 @@
-FROM rust:1.69 AS base
+FROM rust:1.71 AS base
 WORKDIR /app
 EXPOSE 3030
 
-FROM rust:1.69 AS builder
+FROM rust:1.71 AS builder
 WORKDIR /source
 
 RUN mkdir -p libs/blogparser/src
