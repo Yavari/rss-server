@@ -1,26 +1,26 @@
+use crate::{Blog, BlogError};
 use reqwest::Client;
-use crate::Blog;
 
 impl Blog {
-    pub async fn fetch_blog(&self, client: &Client) -> String {
-        self.fetch_url(&self.get_blog_url(), client).await
+    pub async fn fetch_blog(&self, client: &Client) -> Result<String, BlogError> {
+        self.fetch_url(&self.blog_url(), client).await
     }
 
-    async fn fetch_url(&self, url: &str, client: &Client) -> String {
+    pub async fn fetch_article(&self, url: &str, client: &Client) -> Result<String, BlogError> {
+        self.fetch_url(&self.article_url(url), client).await
+    }
+
+    async fn fetch_url(&self, url: &str, client: &Client) -> Result<String, BlogError> {
         println!("{}", url);
         let result = client
             .get(url)
             .send()
             .await
-            .expect(&format!("Could not fetch {}", url));
-        result.text().await.expect("Could not convert response to html")
+            .map_err(|x| BlogError::Generic(format!("Could not fetch {}. {}", url, x)))?;
+        result.text().await.map_err(|x| BlogError::Generic(format!("Could read text {}. {}", url, x)))
     }
 
-    pub async fn fetch_article(&self, url: &str, client: &Client) -> String {
-        self.fetch_url(&self.article_url(url), client).await
-    }
-
-    fn get_blog_url(&self) -> String {
+    fn blog_url(&self) -> String {
         match &self.url_suffix {
             Some(suffix) => format!("{}/{}", &self.url, &suffix),
             None => self.url.clone(),

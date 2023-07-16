@@ -22,17 +22,18 @@ pub async fn view_blog(state: State<AppState>, Path(id): Path<usize>) -> Html<St
     let blog = get_blog(id);
     if let Some(blog) = blog {
         let response = blog.fetch_blog(&state.client).await;
-        let urls = parse_links(&blog.index, &response);
-        let urls = urls;
-        if let Ok(urls) = urls {
-            let a = urls
-                .iter()
-                .map(|f| format!("<a href='/rss/blogs/{}/articles{}'>{}</a>", id, f, f))
-                .collect::<Vec<String>>()
-                .join("<br/>");
+        if let Ok(response) = response {
+            let urls = parse_links(&blog.index, &response);
+            let urls = urls;
+            if let Ok(urls) = urls {
+                let a = urls
+                    .iter()
+                    .map(|f| format!("<a href='/rss/blogs/{}/articles{}'>{}</a>", id, f, f))
+                    .collect::<Vec<String>>()
+                    .join("<br/>");
 
-            return Html(a);
-        } else {
+                return Html(a);
+            }
         }
         return Html("Error".to_string());
     } else {
@@ -46,19 +47,19 @@ pub async fn view_article(state: State<AppState>, Path((id, path)): Path<(usize,
     if let Some(blog) = blog {
         let url = "/".to_string() + &path;
         let html = blog.fetch_article(&url, &state.client).await;
-        let article = parse_article(&blog.article, &html);
+        if let Ok(html) = html {
+            let article = parse_article(&blog.article, &html);
+            if let Ok(article) = article {
+                let html = if let Some(date) = article.date {
+                    format!("<h1>{}</h1><p>{}</p><hr/>{}", article.headline, date, article.content)
+                } else {
+                    format!("<h1>{}</h1><hr/>{}", article.headline, article.content)
+                };
 
-        if let Ok(article) = article {
-            let html = if let Some(date) = article.date {
-                format!("<h1>{}</h1><p>{}</p><hr/>{}", article.headline, date, article.content)
-            } else {
-                format!("<h1>{}</h1><hr/>{}", article.headline, article.content)
-            };
-
-            return Html(html);
-        } else {
-            return Html("ERROR".to_string());
+                return Html(html);
+            }
         }
+        return Html("ERROR".to_string());
     } else {
         return Html("Not found".to_string());
     }

@@ -43,19 +43,19 @@ async fn main() -> Result<(), BlogError> {
     ];
 
     for blog in &blogs {
-        let str = blog.to_html_safe_string();
+        let str = blog.to_html_safe_string().unwrap();
         println!("{}", str);
     }
 
     for blog in &blogs {
-        let str = &blog.to_html_safe_string();
-        let blog = Blog::from_html_safe_string(str);
-        let response = blog.fetch_blog(&client).await;
+        let str = &blog.to_html_safe_string().unwrap();
+        let blog = Blog::from_html_safe_string(str).unwrap();
+        let response = blog.fetch_blog(&client).await.unwrap();
         let urls = parse_links(&blog.index, &response)?;
         println!("{:?}", urls);
 
         for url in urls.into_iter() {
-            let html = blog.fetch_article(&url, &client).await;
+            let html = blog.fetch_article(&url, &client).await.unwrap();
             println!("{:?}", parse_article(&blog.article, &html));
             return Ok(());
         }
