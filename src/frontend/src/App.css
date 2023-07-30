@@ -1,0 +1,28 @@
+.container {
+  display: flex;
+  justify-content: flex-start;
+}
+
+label {
+  margin-right: 15px;
+  vertical-align: top;
+}
+
+label.title {
+  width: 150px;
+}
+
+input,
+select {
+  margin-right: 30px;
+  height: 20px;
+  vertical-align: top;
+}
+
+input.index {
+  width: 50px;
+}
+
+textarea[name="regex"] {
+  width: 470px;
+}

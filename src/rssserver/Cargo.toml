@@ -12,9 +12,11 @@ axum-macros = "0.3"
 tokio = { version = "1.0", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
 tower = { version = "0.4" }
-tower-http = { version = "0.4", features = ["trace", "normalize-path"] }
+tower-http = { version = "0.4", features = ["trace", "normalize-path", "cors"] }
 tracing-subscriber = "0.3"
 tracing = "0.1"
 reqwest = "0.11"
 rss = "2.0"
 futures = "0.3"
+mime_guess = "2.0"
+include_dir = "0.7"
